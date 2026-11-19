@@ -110,6 +110,7 @@ title = "Update the AAC audio codecs: libfaac 3.0 and FAAD3"
 why = "Move the cameras' AAC encoding to faac 3.0 and replace the Helix AAC decoder with the FAAD3 bundled with it, across raptor, the HomeKit daemon and the firmware, for a newer codec and less flash."
 status = "active"
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
+notes = "AAC-ELD question (2026-11-19): faac 3.0 and FAAD3 don't do AAC-ELD (deliberately); the only ELD encoder is fdk-aac, whose licence doesn't fit GPL code, so HomeKit live view and talk stay Opus and recordings use AAC-LC, as the certified Aqara G100 does for recordings. Test on the Wyze Cam v4: when recordings offered AAC-ELD first, the home hub selected it (audio codec 1); back on AAC-LC only it re-selected AAC-LC within seconds. Whether a hub plays ELD recordings is untested (needs an ELD encoder)."
 
 [[items]]
 id = "GOAL-t41-nna"
