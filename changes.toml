@@ -288,6 +288,7 @@ markers = [{ file = "rvd/rvd_frame_loop.c", text = "rvd_apply_flip(st)" }]
 [[items]]
 id = "FIX-gen3-antiflicker-auto"
 kind = "fix"
+part_of = ["GOAL-v4-firmware"]
 title = "raptor-hal: Gen3 anti-flicker in AUTO mode"
 why = "NORMAL mode pinned exposure to the mains period, so bright scenes couldn't expose correctly on the T41."
 status = "in-pr"
@@ -303,6 +304,7 @@ markers = [{ file = "src/hal_isp.c", text = "IMPISP_ANTIFLICKER_AUTO_MODE" }]
 [[items]]
 id = "FIX-gen3-total-gain-linear"
 kind = "fix"
+part_of = ["GOAL-v4-firmware"]
 title = "raptor-hal: report Gen3 total_gain on the linear scale"
 why = "T40/T41 report TotalGainDb (log2 Q16); day/night thresholds expect the linear [24.8] scale, so lit scenes were forced to night."
 status = "in-pr"
