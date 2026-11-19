@@ -135,7 +135,7 @@ why = "HomeKitADK-based daemon reading raptor's rings: live view (two RTP sessio
 status = "local"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-tested = "2026-11-19, Wyze Cam v3 and v4: 0.9.7"
+tested = "2026-11-20, Wyze Cam v3 and v4: 0.9.7 from the flashed 2026-11-19 images; live view with audio on both"
 notes = "Public v0.9.7 released 2026-11-19 (public main 050dbf6), matching the development line."
 [[items.repos]]
 repo = "thingino-homekit"
@@ -153,7 +153,7 @@ then = "Rebase onto master. rhkd is pinned to thingino-homekit v0.9.7 `050dbf6`,
 part_of = ["GOAL-homekit", "GOAL-v4-firmware"]
 depends = ["FEAT-rhkd"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
-tested = "2026-11-18, Wyze Cam v3: image built from the branch, flashed, stayed paired"
+tested = "2026-11-20, Wyze Cam v3 and v4: images with the package flashed with settings kept; both stayed paired, live view and audio work"
 notes = "Pinned to rhkd v0.3.9; needs a bump and a rebase onto upstream master (42 commits behind on 2026-11-19)."
 [[items.repos]]
 repo = "thingino-firmware"
@@ -167,7 +167,7 @@ why = "A third H.264 encoder ([stream2], ring \"aux\") that only runs while some
 status = "local"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger"
+tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger; 2026-11-20: built into the flashed images (v3 aux 1280x720, v4 aux 1920x1080)"
 notes = "Images built 2026-11-19 take raptor from branch integration/2026-11-19 (cf1e71a): this feature + FIX-rvd-flip-after-start + FIX-ringdump-reopen-stale + FEAT-rad-extra-outputs + FEAT-faac3 + Thingino's digital-zoom package patch (overrides skip package patches)."
 [[items.repos]]
 repo = "raptor"
@@ -205,7 +205,7 @@ status = "in-pr"
 waiting_on = "raptor #92 merging: the firmware change needs a raptor that builds against faac 3.0. Also a faac release after 3.0: upstream fixed the uClibc header clash (faac#149) in master via faac#150, and our patch goes once a release has it."
 then = "Open the thingino-firmware PR (faac 3.0 package with libfaad3, prudynt-t and timps patches, raptor without libhelix-aac) with a thingino-raptor bump to the merged commit. rhkd needs nothing more: the thingino-rhkd package pins thingino-homekit v0.9.7 `050dbf6`, which builds on faac 2.x and 3.0. Drop rhkd's faac 2.x path once Thingino ships faac 3.0."
 prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/FreewareAdvancedAudio/faac/issues/149", "https://github.com/FreewareAdvancedAudio/faac/pull/150"]
-tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main."
+tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main. 2026-11-20: v3 and v4 images with faac 3.0 and libfaad3 (no Helix) flashed and running."
 notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe. faac 3.0 needs a patch for uClibc (its common/endian.h shadows <endian.h>); prudynt-t and timps get ABI 3 patches. Firmware must bump thingino-raptor to a raptor with this change in the same step."
 [[items.repos]]
 repo = "raptor"
@@ -279,7 +279,7 @@ status = "local"
 part_of = ["GOAL-v4-firmware"]
 depends = ["FIX-t41-isp-flip"]
 devices = ["wyze-cam-v4"]
-tested = "2026-11-19, Wyze Cam v4: flipped right after start (log: flip applied after stream start)"
+tested = "2026-11-20, Wyze Cam v4: in the flashed image, flipped right after start (log: flip applied after stream start)"
 notes = "Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it."
 [[items.repos]]
 repo = "raptor"
@@ -381,9 +381,12 @@ status = "in-pr"
 waiting_on = "Review of thingino-firmware #2066."
 part_of = ["GOAL-webui-speed"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2066"]
+tested = "2026-11-20, Wyze Cam v3 and v4: in the flashed images"
+notes = "Patch 0009's context now matches 0008's braced -M case; the fix (153af5667) was pushed to #2066 on 2026-11-20."
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "uhttpd-gzip-optin"
+commits = ["153af5667"]
 
 [[items]]
 id = "ISSUE-config-save-runtime-values"
@@ -394,17 +397,3 @@ status = "unfixed"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 notes = "Seen 2026-11-17 (stream1 300000) and 2026-11-19 (aux 299000). Fix options: rvd keeps configured and runtime values apart, or rhkd re-checks the file after a session."
-
-[[items]]
-id = "FIX-libcurl-autoreconf-deps"
-kind = "fix"
-title = "thingino-libcurl: keep the autoreconf host tools in the dependency override"
-why = "Buildroot's libcurl now runs autoreconf; Thingino's libcurl override replaces libcurl's dependency list with `override`, which drops the autoconf/automake/libtool host tools Buildroot adds, so parallel image builds fail at libcurl's configure step."
-status = "local"
-part_of = ["GOAL-v4-firmware"]
-tested = "2026-11-19: found building Wyze Cam v3/v4 images from upstream master d78534cae"
-notes = "Upstream PR candidate; upstream CI passes, apparently because its builds don't hit the ordering."
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "fix-libcurl-autoreconf-deps"
-commits = ["a00ff7d9c"]
