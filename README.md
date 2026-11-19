@@ -34,6 +34,9 @@ python3 check.py v4 raptor=<tree> raptor-hal=<tree> --binary rvd
 
 1. Edit `changes.toml`: add or update an item when a fix or feature is made, changes branch or commit, goes
    into a PR, merges, or is tested. Add it to a camera's `must` when every build for that camera needs it.
+   When it's held up by an upstream merge, a reply or a decision, set `waiting_on` (required for `status = "parked"`)
+   and `then` (the step once that clears); the page lists these under **Waiting on something**. Remove both
+   when the blocker clears.
 2. `python3 build.py` validates every reference and builds `index.html`. It refuses to build if the file
    contains anything private (IP addresses, LAN host names, local paths).
 3. Commit and push; GitHub Actions publishes the page.
