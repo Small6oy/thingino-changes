@@ -213,7 +213,7 @@ branch = "faac-abi3"
 commits = ["ba65f85"]
 [[items.repos]]
 repo = "thingino-homekit"
-branch = "faac-abi3"
+branch = "main"
 commits = ["783fd4f"]
 [[items.repos]]
 repo = "thingino-firmware"
