@@ -182,9 +182,10 @@ commits = ["6751291"]
 id = "FEAT-faac3"
 kind = "feature"
 title = "faac 3.0 across the stack"
-why = "Move AAC encoding to faac 3.0's API and drop libhelix-aac from the raptor package."
+why = "Move AAC encoding to faac 3.0's API (ABI 3) and replace Helix AAC decoding with the libfaad3 bundled in faac 3.0; saves about 42 KB of flash on the v4 (faac 2.2 + helix-aac 180 KB, faac 3.0 + faad3 138 KB)."
 status = "local"
-notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe."
+tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main."
+notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe. faac 3.0 needs a patch for uClibc (its common/endian.h shadows <endian.h>); prudynt-t and timps get ABI 3 patches. Firmware must bump thingino-raptor to a raptor with this change in the same step."
 [[items.repos]]
 repo = "raptor"
 branch = "faac-abi3"
