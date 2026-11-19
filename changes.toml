@@ -13,7 +13,8 @@
 #          Merged changes are removed from the register (upstream carries them) and their branches deleted.
 #
 # [[items]] fields: id, kind, title, why, status, devices, part_of (goal ids), depends (item ids),
-#   prs (URLs), tested ("date, device: what"), notes, and [[items.repos]] blocks:
+#   prs (URLs), tested ("date, device: what"), notes, waiting_on (what it waits on: a merge, a reply, a decision;
+#   required when status is parked) and then (the step once that clears), and [[items.repos]] blocks:
 #   repo (a [[repos]] id), branch, commits (any one being an ancestor of the tree satisfies the check),
 #   markers ([{file, text}]: all present in the working tree also satisfies it; survives cherry-picks
 #   and uncommitted test patches), binaries (optional: only check this block when installing these, e.g.
@@ -118,6 +119,8 @@ kind = "goal"
 title = "Object detection on the T41 NNA"
 why = "Run small detection models (yolov5n) on the T41's neural accelerator."
 status = "parked"
+waiting_on = "An answer on thingino-firmware issue #2093, which decides between a U-Boot change and a fix in the NNA driver."
+then = "Raise the fix the answer points to, then resume detection work."
 devices = ["wyze-cam-v4"]
 notes = "Works on the v4 (~80 ms per frame on CPU0) after the U-Boot L2 change; paused, waiting on thingino-firmware issue #2093."
 
@@ -145,6 +148,8 @@ kind = "feature"
 title = "thingino-rhkd firmware package"
 why = "Builds rhkd into Thingino images (pinned release, init script, web UI page)."
 status = "in-pr"
+waiting_on = "Maintainer review of thingino-firmware #2085."
+then = "Rebase onto master and bump rhkd; after FEAT-faac3 lands, pin a release with the faac 3.0 aacpipe."
 part_of = ["GOAL-homekit", "GOAL-v4-firmware"]
 depends = ["FEAT-rhkd"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
@@ -179,6 +184,8 @@ kind = "feature"
 title = "rad: extra encoder outputs on the same capture"
 why = "[audio2]/[audio3] give a second codec (AAC-LC for HKSV next to Opus for live view) from one microphone capture, on demand."
 status = "in-pr"
+waiting_on = "Review of raptor #88. It conflicts with #92 on one line of `rad/rad_codec_aac.c`; whichever lands second rebases."
+then = "thingino-raptor bump; then remove the test rad the cameras carry."
 part_of = ["GOAL-homekit"]
 prs = ["https://github.com/gtxaspec/raptor/pull/88"]
 tested = "2026-11-18, Wyze Cam v3 and v4"
@@ -194,6 +201,8 @@ title = "faac 3.0 across the stack"
 part_of = ["GOAL-aac-update"]
 why = "Move AAC encoding to faac 3.0's API (ABI 3) and replace Helix AAC decoding with the libfaad3 bundled in faac 3.0; saves about 42 KB of flash on the v4 (faac 2.2 + helix-aac 180 KB, faac 3.0 + faad3 138 KB)."
 status = "in-pr"
+waiting_on = "raptor #92 merging: the firmware change needs a raptor that builds against faac 3.0. Also faac#149: our uClibc patch for faac 3.0 can go once upstream fixes the header clash."
+then = "Open the thingino-firmware PR (faac 3.0 package with libfaad3, prudynt-t and timps patches, raptor without libhelix-aac) with a thingino-raptor bump to the merged commit; then bump rhkd in the thingino-rhkd package to a release with the faac 3.0 aacpipe."
 prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/FreewareAdvancedAudio/faac/issues/149"]
 tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main."
 notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe. faac 3.0 needs a patch for uClibc (its common/endian.h shadows <endian.h>); prudynt-t and timps get ABI 3 patches. Firmware must bump thingino-raptor to a raptor with this change in the same step."
@@ -223,24 +232,13 @@ repo = "thingino-firmware"
 branch = "webui-firmware-library"
 
 [[items]]
-id = "FEAT-t41-pwm"
-kind = "feature"
-title = "T41 PWM driver"
-why = "The T41's PWM controller had no driver; needed for a dimmable spotlight."
-status = "parked"
-part_of = ["GOAL-v4-firmware"]
-devices = ["wyze-cam-v4"]
-tested = "2026-11-17, Wyze Cam v4: pin 48 dims the spotlight"
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "v4stack-pwm"
-
-[[items]]
 id = "FEAT-t41-nna-l2"
 kind = "feature"
 title = "U-Boot: T41 L2 cache at 128 KiB so the NNA's ORAM is free"
 why = "With a 256 KiB L2 the NNA's on-chip RAM overlaps the cache and the accelerator wedges."
 status = "local"
+waiting_on = "An answer on thingino-firmware issue #2093."
+then = "Raise it as a U-Boot PR if that is the chosen fix."
 part_of = ["GOAL-t41-nna"]
 devices = ["wyze-cam-v4"]
 tested = "2026-11-19, Wyze Cam v4: yolov5n runs"
@@ -257,6 +255,8 @@ kind = "fix"
 title = "raptor-hal: flip in the ISP only, on every isp_mode channel (T32/T41)"
 why = "On the T41 the flip has to be set in the ISP for every channel; without it set-hflip/set-vflip fail (-4090) and the picture can't be flipped."
 status = "in-pr"
+waiting_on = "raptor-hal #18 is still a draft: mark it ready, then review."
+then = "Bump `THINGINO_RAPTOR_HAL_VERSION` in thingino-firmware."
 part_of = ["GOAL-v4-firmware"]
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/18"]
@@ -294,6 +294,8 @@ part_of = ["GOAL-v4-firmware"]
 title = "raptor-hal: Gen3 anti-flicker in AUTO mode"
 why = "NORMAL mode pinned exposure to the mains period, so bright scenes couldn't expose correctly on the T41."
 status = "in-pr"
+waiting_on = "raptor-hal #19 is still a draft: mark it ready, then review."
+then = "Bump `THINGINO_RAPTOR_HAL_VERSION`; the v4 can go back to anti-flicker on (50 Hz)."
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/19"]
 [[items.repos]]
@@ -310,6 +312,8 @@ part_of = ["GOAL-v4-firmware"]
 title = "raptor-hal: report Gen3 total_gain on the linear scale"
 why = "T40/T41 report TotalGainDb (log2 Q16); day/night thresholds expect the linear [24.8] scale, so lit scenes were forced to night."
 status = "in-pr"
+waiting_on = "Review of raptor-hal #20."
+then = "Bump `THINGINO_RAPTOR_HAL_VERSION` and drop the Wyze Cam v4 gain workaround (`trigger=gain`, `night_gain=350000`) in the same change, after a test on a dark night."
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/20"]
 tested = "2026-11-18, Wyze Cam v4: held day at 91x"
@@ -343,6 +347,8 @@ kind = "fix"
 title = "ringdump: reopen a ring its producer replaced"
 why = "ringdump -f spun at full CPU on a replaced ring (endless EOVERFLOW after an incarnation bump, endless EAGAIN on an unlinked ring); two left running starved a camera for hours."
 status = "in-pr"
+waiting_on = "Review of raptor #91."
+then = "Nothing beyond the next thingino-raptor bump."
 prs = ["https://github.com/gtxaspec/raptor/pull/91"]
 tested = "2026-11-19, host and Wyze Cam v3"
 [[items.repos]]
@@ -356,6 +362,8 @@ kind = "fix"
 title = "rvd: T41 JPEG rings too small for full-size snapshots (jpeg0 never publishes)"
 why = "A 1440p JPEG at quality 75 is ~1.4 MB, larger than the 0.9 MB ring, so every jpeg0 frame is dropped (ENOSPC) and full-size snapshots fail; HomeKit uses jpeg1 at quality 30 meanwhile."
 status = "in-pr"
+waiting_on = "raptor #57 (not ours) merging; we tested it on the v4."
+then = "thingino-raptor bump; full-size snapshots (`jpeg0`) then work on the T41."
 devices = ["wyze-cam-v4"]
 part_of = ["GOAL-homekit"]
 prs = ["https://github.com/gtxaspec/raptor/pull/57"]
@@ -367,6 +375,7 @@ kind = "fix"
 title = "uhttpd: optionally serve pre-compressed web UI assets"
 why = "Smaller transfers on slow camera Wi-Fi; opt-in because the compressed copies cost flash."
 status = "in-pr"
+waiting_on = "Review of thingino-firmware #2066."
 part_of = ["GOAL-webui-speed"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2066"]
 [[items.repos]]

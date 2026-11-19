@@ -60,6 +60,11 @@ def validate(d: dict):
             fail(f"{where}: kind {i['kind']!r} not in {KINDS}")
         if i["status"] not in STATUSES:
             fail(f"{where}: status {i['status']!r} not in {STATUSES}")
+        for f in ("waiting_on", "then"):
+            if f in i and not (isinstance(i[f], str) and i[f].strip()):
+                fail(f"{where}: {f} must be a non-empty string")
+        if i["status"] == "parked" and "waiting_on" not in i:
+            fail(f"{where}: a parked item says what it is waiting_on")
         prefix = {"goal": "GOAL-", "feature": "FEAT-", "fix": "FIX-", "issue": "ISSUE-"}[i["kind"]]
         if not where.startswith(prefix):
             fail(f"{where}: a {i['kind']} id starts with {prefix}")

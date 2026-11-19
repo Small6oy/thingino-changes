@@ -57,6 +57,8 @@ input[type=search] { flex: 1 1 180px; min-width: 0; }
 .list { list-style: none; margin: 8px 0 0; padding: 0; }
 .list li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-top: 1px dashed var(--line); font-size: 13px; }
 .list li:first-child { border-top: 0; }
+.wait-line { display: block; color: var(--muted); margin-top: 2px; }
+.wait-line b { color: var(--ink); font-weight: 600; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; transform: translateY(-1px); }
 details { margin-top: 8px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13px; }
@@ -82,6 +84,12 @@ footer { margin-top: 48px; color: var(--muted); font-size: 12px; }
 
   <h2>Goals</h2>
   <div class="grid" id="goals"></div>
+
+  <div id="waiting-wrap" hidden>
+    <h2>Waiting on something</h2>
+    <p class="small">Done on our side, but held up by an upstream merge, a reply or a decision. Each shows what it waits on and the step once that clears.</p>
+    <div class="card"><ul class="list wait" id="waiting"></ul></div>
+  </div>
 
   <div id="loose-wrap" hidden>
     <h2>Not part of a goal</h2>
@@ -136,6 +144,17 @@ document.getElementById('goals').innerHTML = D.items.filter(i => i.kind === 'goa
     <ul class="list">${rows || '<li class="small">No changes linked yet.</li>'}</ul></div>`;
 }).join('');
 
+// Waiting: anything with waiting_on, parked first
+const waiting = D.items.filter(i => i.waiting_on)
+  .sort((a, b) => (b.status === 'parked') - (a.status === 'parked'));
+if (waiting.length) {
+  document.getElementById('waiting-wrap').hidden = false;
+  document.getElementById('waiting').innerHTML = waiting.map(i => `<li>${dot(i.status)}<span>
+    <a href="#${i.id}">${md(i.title)}</a> <span class="id">${KINDS[i.kind]} · ${STATUS[i.status]}</span>
+    <span class="wait-line"><b>Waiting on</b> ${md(i.waiting_on)}</span>
+    ${i.then ? `<span class="wait-line"><b>Then</b> ${md(i.then)}</span>` : ''}</span></li>`).join('');
+}
+
 // Features, fixes and issues not attached to any goal
 const loose = D.items.filter(i => i.kind !== 'goal' && !(i.part_of || []).length);
 if (loose.length) {
@@ -186,6 +205,8 @@ function card(i) {
     usedBy.length && ['Needed by', usedBy.map(link).join(', ')],
     (i.devices || []).length && ['Cameras', i.devices.map(d => esc(devs[d]?.name || d)).join(', ')],
     mustOn.length && ['Must be in builds for', esc(mustOn.join(', '))],
+    i.waiting_on && ['Waiting on', md(i.waiting_on)],
+    i.then && ['Then', md(i.then)],
     i.tested && ['Tested', md(i.tested)],
     i.notes && ['Notes', md(i.notes)],
   ].filter(Boolean);
