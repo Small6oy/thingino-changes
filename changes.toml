@@ -136,7 +136,7 @@ status = "local"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-20, Wyze Cam v3 and v4: 0.9.7 from the flashed 2026-11-19 images; live view with audio on both"
-notes = "Public v0.9.7 released 2026-11-19 (public main 050dbf6), matching the development line."
+notes = "Public v0.9.8 released 2026-11-20 (public main 63be501), matching the development line. Both cameras run 0.9.8 as an overlay binary on top of the 2026-11-19 images."
 [[items.repos]]
 repo = "thingino-homekit"
 branch = "main"
@@ -149,7 +149,7 @@ title = "thingino-rhkd firmware package"
 why = "Builds rhkd into Thingino images (pinned release, init script, web UI page)."
 status = "in-pr"
 waiting_on = "Maintainer review of thingino-firmware #2085."
-then = "Rebase onto master. rhkd is pinned to thingino-homekit v0.9.7 `050dbf6`, which builds on faac 2.x and 3.0."
+then = "Rebase onto master. rhkd is pinned to thingino-homekit v0.9.8 `63be501`, which builds on faac 2.x and 3.0."
 part_of = ["GOAL-homekit", "GOAL-v4-firmware"]
 depends = ["FEAT-rhkd"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
@@ -393,11 +393,13 @@ id = "FIX-rhkd-config-save-bitrate"
 kind = "fix"
 title = "rhkd: a config save during a live view no longer keeps the temporary bitrate"
 why = "rvd's set-bitrate also updates its in-memory config, so saving the running config (e.g. from the web UI) while HomeKit has lowered a stream's bitrate for a live view stored that temporary bitrate in raptor.conf, and it survived the next restart. rhkd now remembers the temporary values it set and, after restoring the encoder (or at startup after a crash), puts the configured value back in raptor.conf if the file holds one of them. Values the owner chose are left alone."
-status = "local"
+status = "in-pr"
+waiting_on = "Review of thingino-firmware #2085 (pins rhkd v0.9.8)."
+prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-20, Wyze Cam v3 (test instance): config save mid-session left [stream2] bitrate = 299000; repaired to 1500000 at session end, and at startup after a kill -9"
-notes = "Seen 2026-11-17 (stream1 300000) and 2026-11-19 (aux 299000). rhkd 0.9.8, not yet in an image or a public release. The cleaner fix would be a non-persisting set-bitrate in rvd; not raised."
+notes = "Seen 2026-11-17 (stream1 300000) and 2026-11-19 (aux 299000). rhkd 0.9.8: public release v0.9.8 (63be501), running on both cameras (overlay). The cleaner fix would be a non-persisting set-bitrate in rvd; not raised."
 [[items.repos]]
 repo = "thingino-homekit"
 branch = "main"
