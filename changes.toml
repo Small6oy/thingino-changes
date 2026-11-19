@@ -140,7 +140,7 @@ notes = "Public releases on GitHub lag the development line (public v0.7.7; deve
 [[items.repos]]
 repo = "thingino-homekit"
 branch = "main"
-commits = ["2755bf8"]
+commits = ["783fd4f", "2755bf8"]
 
 [[items]]
 id = "FEAT-thingino-rhkd-package"
@@ -168,6 +168,7 @@ status = "local"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger"
+notes = "Images built 2026-11-19 take raptor from branch integration/2026-11-19 (cf1e71a): this feature + FIX-rvd-flip-after-start + FIX-ringdump-reopen-stale + FEAT-rad-extra-outputs + FEAT-faac3 + Thingino's digital-zoom package patch (overrides skip package patches)."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
