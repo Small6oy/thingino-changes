@@ -26,7 +26,7 @@
 [meta]
 title = "Thingino changes"
 owner = "Small6oy"
-updated = "2026-11-19"
+updated = "2026-11-20"
 intro = "Fixes, features and goals we carry on top of upstream Thingino, raptor, raptor-hal and the HomeKit daemon, what each camera's builds must contain, and where each change stands upstream."
 
 # ---------------------------------------------------------------------------------------------------
@@ -119,10 +119,10 @@ kind = "goal"
 title = "Object detection on the T41 NNA"
 why = "Run small detection models (yolov5n) on the T41's neural accelerator."
 status = "parked"
-waiting_on = "An answer on thingino-firmware issue #2093, which decides between a U-Boot change and a fix in the NNA driver."
-then = "Raise the fix the answer points to, then resume detection work."
+waiting_on = "The maintainer's U-Boot fix (thingino-firmware issue #2093, closed 2026-11-19: \"I have a fix in uboot pending\")."
+then = "Once their U-Boot change lands, test it on the v4; resume detection work."
 devices = ["wyze-cam-v4"]
-notes = "Works on the v4 (~80 ms per frame on CPU0) after the U-Boot L2 change; paused, waiting on thingino-firmware issue #2093."
+notes = "Works on the v4 (~80 ms per frame on CPU0) after the U-Boot L2 change; paused until the maintainer's U-Boot fix for thingino-firmware issue #2093 lands."
 
 # ---------------------------------------------------------------------------------------------------
 # Features
@@ -202,9 +202,9 @@ title = "faac 3.0 across the stack"
 part_of = ["GOAL-aac-update"]
 why = "Move AAC encoding to faac 3.0's API (ABI 3) and replace Helix AAC decoding with the libfaad3 bundled in faac 3.0; saves about 42 KB of flash on the v4 (faac 2.2 + helix-aac 180 KB, faac 3.0 + faad3 138 KB)."
 status = "in-pr"
-waiting_on = "raptor #92 merging: the firmware change needs a raptor that builds against faac 3.0. Also faac#149: our uClibc patch for faac 3.0 can go once upstream fixes the header clash."
+waiting_on = "raptor #92 merging: the firmware change needs a raptor that builds against faac 3.0. Also a faac release after 3.0: upstream fixed the uClibc header clash (faac#149) in master via faac#150, and our patch goes once a release has it."
 then = "Open the thingino-firmware PR (faac 3.0 package with libfaad3, prudynt-t and timps patches, raptor without libhelix-aac) with a thingino-raptor bump to the merged commit. rhkd needs nothing more: the thingino-rhkd package pins thingino-homekit main `ddeda5e`, which builds on faac 2.x and 3.0. Drop rhkd's faac 2.x path once Thingino ships faac 3.0."
-prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/FreewareAdvancedAudio/faac/issues/149"]
+prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/FreewareAdvancedAudio/faac/issues/149", "https://github.com/FreewareAdvancedAudio/faac/pull/150"]
 tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main."
 notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe. faac 3.0 needs a patch for uClibc (its common/endian.h shadows <endian.h>); prudynt-t and timps get ABI 3 patches. Firmware must bump thingino-raptor to a raptor with this change in the same step."
 [[items.repos]]
@@ -238,8 +238,8 @@ kind = "feature"
 title = "U-Boot: T41 L2 cache at 128 KiB so the NNA's ORAM is free"
 why = "With a 256 KiB L2 the NNA's on-chip RAM overlaps the cache and the accelerator wedges."
 status = "local"
-waiting_on = "An answer on thingino-firmware issue #2093."
-then = "Raise it as a U-Boot PR if that is the chosen fix."
+waiting_on = "The maintainer's own U-Boot fix for thingino-firmware issue #2093 (closed 2026-11-19)."
+then = "Compare their change with ours; drop our branch if theirs frees the ORAM, otherwise offer ours."
 part_of = ["GOAL-t41-nna"]
 devices = ["wyze-cam-v4"]
 tested = "2026-11-19, Wyze Cam v4: yolov5n runs"
@@ -256,7 +256,7 @@ kind = "fix"
 title = "raptor-hal: flip in the ISP only, on every isp_mode channel (T32/T41)"
 why = "On the T41 the flip has to be set in the ISP for every channel; without it set-hflip/set-vflip fail (-4090) and the picture can't be flipped."
 status = "in-pr"
-waiting_on = "raptor-hal #18 is still a draft: mark it ready, then review."
+waiting_on = "Review of raptor-hal #18."
 then = "Bump `THINGINO_RAPTOR_HAL_VERSION` in thingino-firmware."
 part_of = ["GOAL-v4-firmware"]
 devices = ["wyze-cam-v4"]
@@ -295,10 +295,12 @@ part_of = ["GOAL-v4-firmware"]
 title = "raptor-hal: Gen3 anti-flicker in AUTO mode"
 why = "NORMAL mode pinned exposure to the mains period, so bright scenes couldn't expose correctly on the T41."
 status = "in-pr"
-waiting_on = "raptor-hal #19 is still a draft: mark it ready, then review."
+waiting_on = "Review of raptor-hal #19."
 then = "Bump `THINGINO_RAPTOR_HAL_VERSION`; the v4 can go back to anti-flicker on (50 Hz)."
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/19"]
+tested = "2026-11-20, Wyze Cam v4: 60 Hz in morning sun, NORMAL (upstream HAL) pinned at 369 lines, luma 248; AUTO 13 lines, luma 61"
+notes = "Fixes gtxaspec/raptor #85 (white picture after booting into a bright scene; a night/day ISP toggle heals it because the SDK restores day mode with AUTO anti-flicker). Reproduced and explained on #85 on 2026-11-20."
 [[items.repos]]
 repo = "raptor-hal"
 binaries = ["rvd"]
