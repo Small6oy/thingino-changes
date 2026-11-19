@@ -104,6 +104,14 @@ status = "active"
 devices = ["wyze-cam-v4"]
 
 [[items]]
+id = "GOAL-aac-update"
+kind = "goal"
+title = "Update the AAC audio codecs: libfaac 3.0 and FAAD3"
+why = "Move the cameras' AAC encoding to faac 3.0 and replace the Helix AAC decoder with the FAAD3 bundled with it, across raptor, the HomeKit daemon and the firmware, for a newer codec and less flash."
+status = "active"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+
+[[items]]
 id = "GOAL-t41-nna"
 kind = "goal"
 title = "Object detection on the T41 NNA"
@@ -182,6 +190,7 @@ commits = ["6751291"]
 id = "FEAT-faac3"
 kind = "feature"
 title = "faac 3.0 across the stack"
+part_of = ["GOAL-aac-update"]
 why = "Move AAC encoding to faac 3.0's API (ABI 3) and replace Helix AAC decoding with the libfaad3 bundled in faac 3.0; saves about 42 KB of flash on the v4 (faac 2.2 + helix-aac 180 KB, faac 3.0 + faad3 138 KB)."
 status = "local"
 tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main."

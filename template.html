@@ -83,6 +83,11 @@ footer { margin-top: 48px; color: var(--muted); font-size: 12px; }
   <h2>Goals</h2>
   <div class="grid" id="goals"></div>
 
+  <div id="loose-wrap" hidden>
+    <h2>Not part of a goal</h2>
+    <div class="card"><ul class="list" id="loose"></ul></div>
+  </div>
+
   <h2>What every camera build must contain</h2>
   <p class="small">A build missing one of these is refused before it is installed (the check runs from the build tool).</p>
   <div class="grid" id="devices"></div>
@@ -130,6 +135,13 @@ document.getElementById('goals').innerHTML = D.items.filter(i => i.kind === 'goa
     <h3><a href="#${g.id}">${esc(g.title)}</a></h3><p class="why small">${md(g.why)}</p>
     <ul class="list">${rows || '<li class="small">No changes linked yet.</li>'}</ul></div>`;
 }).join('');
+
+// Features, fixes and issues not attached to any goal
+const loose = D.items.filter(i => i.kind !== 'goal' && !(i.part_of || []).length);
+if (loose.length) {
+  document.getElementById('loose-wrap').hidden = false;
+  document.getElementById('loose').innerHTML = loose.map(i => `<li>${dot(i.status)}<span><a href="#${i.id}">${md(i.title)}</a> <span class="id">${KINDS[i.kind]} · ${STATUS[i.status]}</span></span></li>`).join('');
+}
 
 // Devices: must-have lists
 document.getElementById('devices').innerHTML = (D.devices || []).map(d => {
