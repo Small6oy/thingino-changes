@@ -9,7 +9,8 @@
 #          feature  a capability that stands on its own, possibly across repos (faac 3.0)
 #          fix      one bug, normally one repo and one commit
 #          issue    a known bug without a fix yet
-# Status:  active (goals) | local (only on our branches) | in-pr | merged | unfixed | parked | dropped
+# Status:  active (goals) | local (only on our branches) | in-pr | unfixed | parked | dropped
+#          Merged changes are removed from the register (upstream carries them) and their branches deleted.
 #
 # [[items]] fields: id, kind, title, why, status, devices, part_of (goal ids), depends (item ids),
 #   prs (URLs), tested ("date, device: what"), notes, and [[items.repos]] blocks:
@@ -64,7 +65,6 @@ must = [
   "FIX-gen3-antiflicker-auto",
   "FEAT-rvd-aux-stream",
   "FIX-rhkd-ring-incarnation",
-  "FIX-wyze-cam4-gpio-wlan",
 ]
 
 [[devices]]
@@ -309,20 +309,6 @@ commits = ["a17f2e0"]
 markers = [{ file = "src/hal_isp.c", text = "total_gain_log2q16_to_linear_q8" }]
 
 [[items]]
-id = "FIX-wyze-cam4-gpio-wlan"
-kind = "fix"
-title = "wyze_cam4: drop gpio.wlan, pin 78 must stay an input"
-why = "Master images toggled pin 78 as the Wi-Fi power GPIO and the v4 never joined Wi-Fi."
-status = "in-pr"
-part_of = ["GOAL-v4-firmware"]
-devices = ["wyze-cam-v4"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2067"]
-tested = "2026-11-17, Wyze Cam v4: master image joins Wi-Fi"
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "fix-wyze-cam4-gpio-wlan"
-
-[[items]]
 id = "FIX-rhkd-ring-incarnation"
 kind = "fix"
 title = "rhkd: reopen a ring recreated on the same file"
@@ -363,36 +349,6 @@ prs = ["https://github.com/gtxaspec/raptor/pull/57"]
 notes = "Upstream PR #57 (not ours) fixes it; tested on the v4 on 2026-11-19."
 
 [[items]]
-id = "FIX-webui-nr-field"
-kind = "fix"
-title = "raptor web UI: hide noise reduction where the HAL has none, fix its save"
-why = "The noise-reduction field showed on SoCs where it does nothing and saved incorrectly."
-status = "in-pr"
-part_of = ["GOAL-webui-speed"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2052"]
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "webui-raptor-nr-field"
-
-[[items]]
-id = "FIX-webui-agent-caches"
-kind = "fix"
-title = "raptor: cache agent config and runtime, share the heartbeat payload"
-why = "Every page and tab asked the agent again; one shared heartbeat cuts the work per open tab."
-status = "merged"
-part_of = ["GOAL-webui-speed"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2055"]
-
-[[items]]
-id = "FIX-uhttpd-cache-control"
-kind = "fix"
-title = "uhttpd: Cache-Control for static files, tagged assets"
-why = "Static assets were fetched again on every page."
-status = "merged"
-part_of = ["GOAL-webui-speed"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2065"]
-
-[[items]]
 id = "FIX-uhttpd-gzip-optin"
 kind = "fix"
 title = "uhttpd: optionally serve pre-compressed web UI assets"
@@ -403,18 +359,6 @@ prs = ["https://github.com/themactep/thingino-firmware/pull/2066"]
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "uhttpd-gzip-optin"
-
-[[items]]
-id = "FIX-webui-small-merged"
-kind = "fix"
-title = "Web UI: Chart.js under paranoid mode, Bootstrap Icons base rule"
-why = "Two small web UI fixes."
-status = "merged"
-part_of = ["GOAL-webui-speed"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2054", "https://github.com/themactep/thingino-firmware/pull/2057"]
-
-# ---------------------------------------------------------------------------------------------------
-# Known issues (no fix yet)
 
 [[items]]
 id = "ISSUE-config-save-runtime-values"

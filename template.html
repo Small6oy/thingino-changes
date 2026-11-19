@@ -106,7 +106,7 @@ const repos = Object.fromEntries((D.repos || []).map(r => [r.id, r]));
 const devs = Object.fromEntries((D.devices || []).map(d => [d.id, d]));
 const KINDS = { goal: 'Goal', feature: 'Feature', fix: 'Fix', issue: 'Issue' };
 const PLURAL = { goal: 'Goals', feature: 'Features', fix: 'Fixes', issue: 'Issues' };
-const STATUS = { active: 'Active', local: 'Local only', 'in-pr': 'In PR', merged: 'Merged upstream', unfixed: 'Unfixed',
+const STATUS = { active: 'Active', local: 'Local only', 'in-pr': 'In PR', unfixed: 'Unfixed',
   parked: 'Parked', dropped: 'Dropped' };
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const md = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');

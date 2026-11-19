@@ -19,7 +19,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 KINDS = ["goal", "feature", "fix", "issue"]
-STATUSES = ["active", "local", "in-pr", "merged", "unfixed", "parked", "dropped"]
+STATUSES = ["active", "local", "in-pr", "unfixed", "parked", "dropped"]  # merged items are removed
 PRIVATE = [
     (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "an IP address"),
     (re.compile(r"\.lan\b", re.I), "a .lan host name"),
