@@ -1,0 +1,426 @@
+# Thingino change register: every fix, feature and goal we carry across repos, and what each camera's
+# builds must contain. One file; build.py turns it into the public page (index.html) and check.py
+# verifies a source tree before it is installed on a camera (tools/xb runs it).
+#
+# Public: this file is published on GitHub. No IP addresses, LAN host names, local paths, passwords
+# or household details (build.py refuses to build if it finds any).
+#
+# Kinds:   goal     an outcome built from features and fixes (HomeKit on Thingino)
+#          feature  a capability that stands on its own, possibly across repos (faac 3.0)
+#          fix      one bug, normally one repo and one commit
+#          issue    a known bug without a fix yet
+# Status:  active (goals) | local (only on our branches) | in-pr | merged | unfixed | parked | dropped
+#
+# [[items]] fields: id, kind, title, why, status, devices, part_of (goal ids), depends (item ids),
+#   prs (URLs), tested ("date, device: what"), notes, and [[items.repos]] blocks:
+#   repo (a [[repos]] id), branch, commits (any one being an ancestor of the tree satisfies the check),
+#   markers ([{file, text}]: all present in the working tree also satisfies it; survives cherry-picks
+#   and uncommitted test patches), binaries (optional: only check this block when installing these, e.g.
+#   ["rvd"]). An item without commits or markers can't be checked automatically.
+#
+# [[devices]] must: the items every build for that camera has to contain. check.py tests those whose
+#   repo matches the trees being installed; a missing one blocks the install.
+
+[meta]
+title = "Thingino changes"
+owner = "Small6oy"
+updated = "2026-11-19"
+intro = "Fixes, features and goals we carry on top of upstream Thingino, raptor, raptor-hal and the HomeKit daemon, what each camera's builds must contain, and where each change stands upstream."
+
+# ---------------------------------------------------------------------------------------------------
+[[repos]]
+id = "thingino-firmware"
+upstream = "https://github.com/themactep/thingino-firmware"
+fork = "https://github.com/Small6oy/thingino-firmware"
+
+[[repos]]
+id = "raptor"
+upstream = "https://github.com/gtxaspec/raptor"
+fork = "https://github.com/Small6oy/raptor"
+
+[[repos]]
+id = "raptor-hal"
+upstream = "https://github.com/gtxaspec/raptor-hal"
+fork = "https://github.com/Small6oy/raptor-hal"
+
+[[repos]]
+id = "thingino-homekit"
+upstream = "https://github.com/Small6oy/thingino-homekit"
+fork = "https://github.com/Small6oy/thingino-homekit"
+
+[[repos]]
+id = "u-boot"
+upstream = "https://github.com/gtxaspec/u-boot-ingenic"
+
+# ---------------------------------------------------------------------------------------------------
+[[devices]]
+id = "wyze-cam-v4"
+name = "Wyze Cam v4"
+soc = "T41NQ"
+sensor = "OS04D10"
+must = [
+  "FIX-t41-isp-flip",
+  "FIX-rvd-flip-after-start",
+  "FIX-gen3-antiflicker-auto",
+  "FEAT-rvd-aux-stream",
+  "FIX-rhkd-ring-incarnation",
+  "FIX-wyze-cam4-gpio-wlan",
+]
+
+[[devices]]
+id = "wyze-cam-v3"
+name = "Wyze Cam v3"
+soc = "T31X"
+must = [
+  "FEAT-rvd-aux-stream",
+  "FIX-rhkd-ring-incarnation",
+]
+
+# ---------------------------------------------------------------------------------------------------
+# Goals
+
+[[items]]
+id = "GOAL-homekit"
+kind = "goal"
+title = "Native Apple HomeKit on Thingino cameras"
+why = "Cameras appear in Apple Home on their own, without a bridge: live view, two-way audio, motion, HomeKit Secure Video recording."
+status = "active"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
+
+[[items]]
+id = "GOAL-webui-speed"
+kind = "goal"
+title = "A faster, leaner Thingino web UI"
+why = "Page loads were slow on the cameras: uncached assets, repeated agent round trips, a heartbeat per tab."
+status = "active"
+
+[[items]]
+id = "GOAL-v4-firmware"
+kind = "goal"
+title = "Our own firmware image for the Wyze Cam v4"
+why = "Build and flash the v4 from our firmware fork with HomeKit and the camera's fixes included, instead of overlay-only changes."
+status = "active"
+devices = ["wyze-cam-v4"]
+
+[[items]]
+id = "GOAL-t41-nna"
+kind = "goal"
+title = "Object detection on the T41 NNA"
+why = "Run small detection models (yolov5n) on the T41's neural accelerator."
+status = "parked"
+devices = ["wyze-cam-v4"]
+notes = "Works on the v4 (~80 ms per frame on CPU0) after the U-Boot L2 change; paused, waiting on thingino-firmware issue #2093."
+
+# ---------------------------------------------------------------------------------------------------
+# Features
+
+[[items]]
+id = "FEAT-rhkd"
+kind = "feature"
+title = "rhkd: the HomeKit camera daemon"
+why = "HomeKitADK-based daemon reading raptor's rings: live view (two RTP sessions), Opus audio, talkback with echo cancellation, motion sensor, HKSV over HomeKit Data Stream."
+status = "local"
+part_of = ["GOAL-homekit"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+tested = "2026-11-19, Wyze Cam v3 and v4: 0.9.7"
+notes = "Public releases on GitHub lag the development line (public v0.7.7; development 0.9.7)."
+[[items.repos]]
+repo = "thingino-homekit"
+branch = "main"
+commits = ["2755bf8"]
+
+[[items]]
+id = "FEAT-thingino-rhkd-package"
+kind = "feature"
+title = "thingino-rhkd firmware package"
+why = "Builds rhkd into Thingino images (pinned release, init script, web UI page)."
+status = "in-pr"
+part_of = ["GOAL-homekit", "GOAL-v4-firmware"]
+depends = ["FEAT-rhkd"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
+tested = "2026-11-18, Wyze Cam v3: image built from the branch, flashed, stayed paired"
+notes = "Pinned to rhkd v0.3.9; needs a bump and a rebase onto upstream master (42 commits behind on 2026-11-19)."
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "add-thingino-rhkd"
+
+[[items]]
+id = "FEAT-rvd-aux-stream"
+kind = "feature"
+title = "rvd: on-demand aux stream for HomeKit"
+why = "A third H.264 encoder ([stream2], ring \"aux\") that only runs while something reads it, so HomeKit live view gets a matching size without retuning main or sub (which recordings and NVRs use). Keeps encoding a few seconds after the last reader so a quick reconnect doesn't restart it."
+status = "local"
+part_of = ["GOAL-homekit"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger"
+[[items.repos]]
+repo = "raptor"
+binaries = ["rvd"]
+branch = "rvd-aux-stream"
+commits = ["0def512", "6d511dd", "284f623"]
+markers = [
+  { file = "rvd/rvd_pipeline.c", text = "aux: attached as stream" },
+  { file = "rvd/rvd_frame_loop.c", text = "reader back within linger" },
+]
+
+[[items]]
+id = "FEAT-rad-extra-outputs"
+kind = "feature"
+title = "rad: extra encoder outputs on the same capture"
+why = "[audio2]/[audio3] give a second codec (AAC-LC for HKSV next to Opus for live view) from one microphone capture, on demand."
+status = "in-pr"
+part_of = ["GOAL-homekit"]
+prs = ["https://github.com/gtxaspec/raptor/pull/88"]
+tested = "2026-11-18, Wyze Cam v3 and v4"
+[[items.repos]]
+repo = "raptor"
+branch = "rad-second-codec"
+commits = ["6751291"]
+
+[[items]]
+id = "FEAT-faac3"
+kind = "feature"
+title = "faac 3.0 across the stack"
+why = "Move AAC encoding to faac 3.0's API and drop libhelix-aac from the raptor package."
+status = "local"
+notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe."
+[[items.repos]]
+repo = "raptor"
+branch = "faac-abi3"
+commits = ["b92f675"]
+[[items.repos]]
+repo = "thingino-homekit"
+branch = "faac-abi3"
+commits = ["783fd4f"]
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "faac-3.0"
+commits = ["58e47194d"]
+
+[[items]]
+id = "FEAT-webui-firmware-library"
+kind = "feature"
+title = "Web UI: firmware upgrade page with a firmware library"
+why = "Upgrade as its own option, plus a card listing images from a local manifest with sha256 verification."
+status = "local"
+part_of = ["GOAL-v4-firmware"]
+notes = "Written, not yet tested on a camera."
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "webui-firmware-library"
+
+[[items]]
+id = "FEAT-t41-pwm"
+kind = "feature"
+title = "T41 PWM driver"
+why = "The T41's PWM controller had no driver; needed for a dimmable spotlight."
+status = "parked"
+part_of = ["GOAL-v4-firmware"]
+devices = ["wyze-cam-v4"]
+tested = "2026-11-17, Wyze Cam v4: pin 48 dims the spotlight"
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "v4stack-pwm"
+
+[[items]]
+id = "FEAT-t41-nna-l2"
+kind = "feature"
+title = "U-Boot: T41 L2 cache at 128 KiB so the NNA's ORAM is free"
+why = "With a 256 KiB L2 the NNA's on-chip RAM overlaps the cache and the accelerator wedges."
+status = "local"
+part_of = ["GOAL-t41-nna"]
+devices = ["wyze-cam-v4"]
+tested = "2026-11-19, Wyze Cam v4: yolov5n runs"
+[[items.repos]]
+repo = "u-boot"
+branch = "t41-nna-oram"
+
+# ---------------------------------------------------------------------------------------------------
+# Fixes
+
+[[items]]
+id = "FIX-t41-isp-flip"
+kind = "fix"
+title = "raptor-hal: flip in the ISP only, on every isp_mode channel (T32/T41)"
+why = "On the T41 the flip has to be set in the ISP for every channel; without it set-hflip/set-vflip fail (-4090) and the picture can't be flipped."
+status = "in-pr"
+part_of = ["GOAL-v4-firmware"]
+devices = ["wyze-cam-v4"]
+prs = ["https://github.com/gtxaspec/raptor-hal/pull/18"]
+tested = "2026-11-19, Wyze Cam v4: set-hflip/set-vflip ok, get-isp 1/1"
+notes = "2026-11-19 regression: an rvd linked against a raptor-hal branch without this fix shipped to the v4 and lost the flip. Now a must-have for every v4 build."
+[[items.repos]]
+repo = "raptor-hal"
+binaries = ["rvd"]
+branch = "v4-fixes"
+commits = ["5058901", "30b0b56"]
+markers = [{ file = "src/hal_isp.c", text = "hal_isp_hvflip_attr_fill" }]
+
+[[items]]
+id = "FIX-rvd-flip-after-start"
+kind = "fix"
+title = "rvd: apply the configured flip again once the channels run (T41)"
+why = "On the T41 the flip set during ISP setup, before any channel is enabled, is ignored: the camera came up unflipped after every rvd start or restart although raptor.conf asked for a flip."
+status = "local"
+part_of = ["GOAL-v4-firmware"]
+depends = ["FIX-t41-isp-flip"]
+devices = ["wyze-cam-v4"]
+tested = "2026-11-19, Wyze Cam v4: flipped right after start (log: flip applied after stream start)"
+notes = "Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it."
+[[items.repos]]
+repo = "raptor"
+binaries = ["rvd"]
+branch = "rvd-aux-t41-flip"
+commits = ["54c4c3b"]
+markers = [{ file = "rvd/rvd_frame_loop.c", text = "rvd_apply_flip(st)" }]
+
+[[items]]
+id = "FIX-gen3-antiflicker-auto"
+kind = "fix"
+title = "raptor-hal: Gen3 anti-flicker in AUTO mode"
+why = "NORMAL mode pinned exposure to the mains period, so bright scenes couldn't expose correctly on the T41."
+status = "in-pr"
+devices = ["wyze-cam-v4"]
+prs = ["https://github.com/gtxaspec/raptor-hal/pull/19"]
+[[items.repos]]
+repo = "raptor-hal"
+binaries = ["rvd"]
+branch = "v4-fixes"
+commits = ["ba5bf46", "26cd15f"]
+markers = [{ file = "src/hal_isp.c", text = "IMPISP_ANTIFLICKER_AUTO_MODE" }]
+
+[[items]]
+id = "FIX-gen3-total-gain-linear"
+kind = "fix"
+title = "raptor-hal: report Gen3 total_gain on the linear scale"
+why = "T40/T41 report TotalGainDb (log2 Q16); day/night thresholds expect the linear [24.8] scale, so lit scenes were forced to night."
+status = "in-pr"
+devices = ["wyze-cam-v4"]
+prs = ["https://github.com/gtxaspec/raptor-hal/pull/20"]
+tested = "2026-11-18, Wyze Cam v4: held day at 91x"
+notes = "Not a must for the v4 yet: its raptor.conf carries a night_gain workaround. Once a build has this fix, remove the workaround in the same change."
+[[items.repos]]
+repo = "raptor-hal"
+binaries = ["rvd"]
+branch = "fix-gen3-total-gain-linear"
+commits = ["a17f2e0"]
+markers = [{ file = "src/hal_isp.c", text = "total_gain_log2q16_to_linear_q8" }]
+
+[[items]]
+id = "FIX-wyze-cam4-gpio-wlan"
+kind = "fix"
+title = "wyze_cam4: drop gpio.wlan, pin 78 must stay an input"
+why = "Master images toggled pin 78 as the Wi-Fi power GPIO and the v4 never joined Wi-Fi."
+status = "in-pr"
+part_of = ["GOAL-v4-firmware"]
+devices = ["wyze-cam-v4"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2067"]
+tested = "2026-11-17, Wyze Cam v4: master image joins Wi-Fi"
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "fix-wyze-cam4-gpio-wlan"
+
+[[items]]
+id = "FIX-rhkd-ring-incarnation"
+kind = "fix"
+title = "rhkd: reopen a ring recreated on the same file"
+why = "An aux resize recreates the ring on the same inode and bumps its incarnation; readers that only check the inode get RSS_EOVERFLOW forever and spin (frozen live view, full CPU)."
+status = "local"
+part_of = ["GOAL-homekit"]
+depends = ["FEAT-rvd-aux-stream"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+tested = "2026-11-19, Wyze Cam v3: two aux resizes during a live view, reopened with a keyframe ~0.1 s later"
+[[items.repos]]
+repo = "thingino-homekit"
+branch = "main"
+commits = ["2755bf8"]
+markers = [{ file = "src/rhkd/stream.c", text = "ring_recreated(ring, ringInc)" }]
+
+[[items]]
+id = "FIX-ringdump-reopen-stale"
+kind = "fix"
+title = "ringdump: reopen a ring its producer replaced"
+why = "ringdump -f spun at full CPU on a replaced ring (endless EOVERFLOW after an incarnation bump, endless EAGAIN on an unlinked ring); two left running starved a camera for hours."
+status = "in-pr"
+prs = ["https://github.com/gtxaspec/raptor/pull/91"]
+tested = "2026-11-19, host and Wyze Cam v3"
+[[items.repos]]
+repo = "raptor"
+branch = "ringdump-reopen-stale"
+commits = ["39ab749"]
+
+[[items]]
+id = "FIX-rvd-t41-jpeg-rings"
+kind = "fix"
+title = "rvd: T41 JPEG rings too small for full-size snapshots (jpeg0 never publishes)"
+why = "A 1440p JPEG at quality 75 is ~1.4 MB, larger than the 0.9 MB ring, so every jpeg0 frame is dropped (ENOSPC) and full-size snapshots fail; HomeKit uses jpeg1 at quality 30 meanwhile."
+status = "in-pr"
+devices = ["wyze-cam-v4"]
+part_of = ["GOAL-homekit"]
+prs = ["https://github.com/gtxaspec/raptor/pull/57"]
+notes = "Upstream PR #57 (not ours) fixes it; tested on the v4 on 2026-11-19."
+
+[[items]]
+id = "FIX-webui-nr-field"
+kind = "fix"
+title = "raptor web UI: hide noise reduction where the HAL has none, fix its save"
+why = "The noise-reduction field showed on SoCs where it does nothing and saved incorrectly."
+status = "in-pr"
+part_of = ["GOAL-webui-speed"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2052"]
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "webui-raptor-nr-field"
+
+[[items]]
+id = "FIX-webui-agent-caches"
+kind = "fix"
+title = "raptor: cache agent config and runtime, share the heartbeat payload"
+why = "Every page and tab asked the agent again; one shared heartbeat cuts the work per open tab."
+status = "merged"
+part_of = ["GOAL-webui-speed"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2055"]
+
+[[items]]
+id = "FIX-uhttpd-cache-control"
+kind = "fix"
+title = "uhttpd: Cache-Control for static files, tagged assets"
+why = "Static assets were fetched again on every page."
+status = "merged"
+part_of = ["GOAL-webui-speed"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2065"]
+
+[[items]]
+id = "FIX-uhttpd-gzip-optin"
+kind = "fix"
+title = "uhttpd: optionally serve pre-compressed web UI assets"
+why = "Smaller transfers on slow camera Wi-Fi; opt-in because the compressed copies cost flash."
+status = "in-pr"
+part_of = ["GOAL-webui-speed"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2066"]
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "uhttpd-gzip-optin"
+
+[[items]]
+id = "FIX-webui-small-merged"
+kind = "fix"
+title = "Web UI: Chart.js under paranoid mode, Bootstrap Icons base rule"
+why = "Two small web UI fixes."
+status = "merged"
+part_of = ["GOAL-webui-speed"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2054", "https://github.com/themactep/thingino-firmware/pull/2057"]
+
+# ---------------------------------------------------------------------------------------------------
+# Known issues (no fix yet)
+
+[[items]]
+id = "ISSUE-config-save-runtime-values"
+kind = "issue"
+title = "`config save` writes temporary runtime values into raptor.conf"
+why = "Saving the running config (e.g. from the web UI) while HomeKit has lowered a stream's bitrate for a live view stores that temporary bitrate as the configured one; it survives the next restart."
+status = "unfixed"
+part_of = ["GOAL-homekit"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+notes = "Seen 2026-11-17 (stream1 300000) and 2026-11-19 (aux 299000). Fix options: rvd keeps configured and runtime values apart, or rhkd re-checks the file after a session."

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{INTRO}}">
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #66665f; --line: #e3e2dc; --accent: #2f5fd0;
+  --goal: #6b3fb8; --feature: #1f7a5a; --fix: #2f5fd0; --issue: #b5462b;
+  --s-active: #6b3fb8; --s-local: #8a6a12; --s-in-pr: #2f5fd0; --s-merged: #1f7a5a; --s-unfixed: #b5462b;
+  --s-parked: #66665f; --s-dropped: #8b8b85; --chip-bg: rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413; --panel: #1d1d1b; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; --accent: #8fb0ff;
+    --goal: #b99af0; --feature: #6fd1a8; --fix: #8fb0ff; --issue: #f29a80;
+    --s-active: #b99af0; --s-local: #e2c262; --s-in-pr: #8fb0ff; --s-merged: #6fd1a8; --s-unfixed: #f29a80;
+    --s-parked: #a3a29b; --s-dropped: #77766f; --chip-bg: rgba(255,255,255,.07);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141413; --panel: #1d1d1b; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; --accent: #8fb0ff;
+  --goal: #b99af0; --feature: #6fd1a8; --fix: #8fb0ff; --issue: #f29a80;
+  --s-active: #b99af0; --s-local: #e2c262; --s-in-pr: #8fb0ff; --s-merged: #6fd1a8; --s-unfixed: #f29a80;
+  --s-parked: #a3a29b; --s-dropped: #77766f; --chip-bg: rgba(255,255,255,.07);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -.01em; }
+h2 { font-size: 18px; margin: 40px 0 12px; }
+.intro { color: var(--muted); max-width: 760px; margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 13px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, .mono { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 20px 0 8px; position: sticky; top: 0;
+  background: var(--bg); padding: 10px 0; z-index: 2; border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--panel); color: var(--ink); padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+select, input[type=search] { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); color: var(--ink); }
+input[type=search] { flex: 1 1 180px; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.card h3 { font-size: 15px; margin: 4px 0 6px; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.kind, .status { font-size: 11px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+  border: 1px solid currentColor; }
+.id { color: var(--muted); font-size: 12px; }
+.why { color: var(--ink); margin: 0 0 8px; }
+.small { font-size: 13px; color: var(--muted); }
+.list { list-style: none; margin: 8px 0 0; padding: 0; }
+.list li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-top: 1px dashed var(--line); font-size: 13px; }
+.list li:first-child { border-top: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+details { margin-top: 8px; }
+summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; }
+dt { color: var(--muted); }
+dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.repo { margin: 0 0 4px; }
+.items { display: flex; flex-direction: column; gap: 10px; }
+.item:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+.empty { color: var(--muted); padding: 20px 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+footer { margin-top: 48px; color: var(--muted); font-size: 12px; }
+@media (max-width: 560px) { h1 { font-size: 23px; } .controls { position: static; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>{{TITLE}}</h1>
+  <p class="intro">{{INTRO}}</p>
+  <p class="meta" id="meta"></p>
+  <div class="legend" id="legend"></div>
+
+  <h2>Goals</h2>
+  <div class="grid" id="goals"></div>
+
+  <h2>What every camera build must contain</h2>
+  <p class="small">A build missing one of these is refused before it is installed (the check runs from the build tool).</p>
+  <div class="grid" id="devices"></div>
+
+  <h2 id="all">All changes</h2>
+  <div class="controls">
+    <div class="seg" id="kinds"></div>
+    <select id="device" aria-label="Camera"></select>
+    <select id="status" aria-label="Status"></select>
+    <input type="search" id="q" placeholder="Search ids, titles, branches, PRs" aria-label="Search">
+  </div>
+  <div class="items" id="items"></div>
+  <footer>Generated from <code>changes.toml</code>. Each change lists the repos, branches and commits that carry it; a commit
+    or marker text is what the pre-install check looks for.</footer>
+</main>
+<script id="data" type="application/json">{{DATA}}</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const byId = Object.fromEntries(D.items.map(i => [i.id, i]));
+const repos = Object.fromEntries((D.repos || []).map(r => [r.id, r]));
+const devs = Object.fromEntries((D.devices || []).map(d => [d.id, d]));
+const KINDS = { goal: 'Goal', feature: 'Feature', fix: 'Fix', issue: 'Issue' };
+const PLURAL = { goal: 'Goals', feature: 'Features', fix: 'Fixes', issue: 'Issues' };
+const STATUS = { active: 'Active', local: 'Local only', 'in-pr': 'In PR', merged: 'Merged upstream', unfixed: 'Unfixed',
+  parked: 'Parked', dropped: 'Dropped' };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const md = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const kindChip = k => `<span class="kind" style="color:var(--${k})">${KINDS[k]}</span>`;
+const statusChip = s => `<span class="status" style="color:var(--s-${s})">${STATUS[s] || s}</span>`;
+const dot = s => `<span class="dot" style="background:var(--s-${s})"></span>`;
+const link = id => byId[id] ? `<a href="#${id}">${esc(id)}</a>` : esc(id);
+const prLabel = u => { const m = u.match(/github\.com\/([^/]+\/[^/]+)\/(pull|issues)\/(\d+)/); return m ? `${m[1]} #${m[3]}` : u; };
+
+document.getElementById('meta').textContent =
+  `${D.items.length} changes · updated ${D.meta.updated}` + (D.meta.owner ? ` · ${D.meta.owner}` : '');
+document.getElementById('legend').innerHTML = Object.keys(STATUS).map(s => `<span>${dot(s)}${STATUS[s]}</span>`).join('');
+
+// Goals: their members grouped by kind
+const members = g => D.items.filter(i => (i.part_of || []).includes(g.id));
+document.getElementById('goals').innerHTML = D.items.filter(i => i.kind === 'goal').map(g => {
+  const m = members(g);
+  const rows = m.sort((a, b) => Object.keys(KINDS).indexOf(a.kind) - Object.keys(KINDS).indexOf(b.kind))
+    .map(i => `<li>${dot(i.status)}<span><a href="#${i.id}">${md(i.title)}</a> <span class="id">${KINDS[i.kind]} · ${STATUS[i.status]}</span></span></li>`).join('');
+  return `<div class="card"><div class="badges">${statusChip(g.status)}<span class="id">${g.id}</span></div>
+    <h3><a href="#${g.id}">${esc(g.title)}</a></h3><p class="why small">${md(g.why)}</p>
+    <ul class="list">${rows || '<li class="small">No changes linked yet.</li>'}</ul></div>`;
+}).join('');
+
+// Devices: must-have lists
+document.getElementById('devices').innerHTML = (D.devices || []).map(d => {
+  const rows = (d.must || []).map(id => { const i = byId[id];
+    return `<li>${dot(i.status)}<span><a href="#${id}">${md(i.title)}</a> <span class="id">${STATUS[i.status]}</span></span></li>`; }).join('');
+  return `<div class="card"><div class="badges"><span class="id">${esc([d.soc, d.sensor].filter(Boolean).join(' · '))}</span></div>
+    <h3>${esc(d.name)}</h3><ul class="list">${rows}</ul></div>`;
+}).join('');
+
+// Filters
+const state = { kind: 'all', device: 'all', status: 'all', q: '' };
+const kindsEl = document.getElementById('kinds');
+kindsEl.innerHTML = [['all', 'All'], ...Object.entries(PLURAL)]
+  .map(([k, v]) => `<button data-k="${k}" aria-pressed="${k === 'all'}">${v}</button>`).join('');
+kindsEl.onclick = e => { const b = e.target.closest('button'); if (!b) return; state.kind = b.dataset.k;
+  kindsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); };
+const devEl = document.getElementById('device');
+devEl.innerHTML = '<option value="all">All cameras</option>' + (D.devices || []).map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
+devEl.onchange = () => { state.device = devEl.value; render(); };
+const stEl = document.getElementById('status');
+stEl.innerHTML = '<option value="all">Any status</option>' + Object.entries(STATUS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+stEl.onchange = () => { state.status = stEl.value; render(); };
+const qEl = document.getElementById('q');
+qEl.oninput = () => { state.q = qEl.value.trim().toLowerCase(); render(); };
+
+function repoBlock(b) {
+  const r = repos[b.repo] || {};
+  const name = r.upstream ? `<a href="${esc(r.upstream)}">${esc(b.repo)}</a>` : esc(b.repo);
+  const bits = [b.branch ? `branch <code>${esc(b.branch)}</code>` : '', (b.commits || []).length ? 'commit ' + b.commits.map(c => `<code>${esc(c)}</code>`).join(' / ') : '',
+    (b.binaries || []).length ? `affects ${b.binaries.map(esc).join(', ')}` : ''].filter(Boolean).join(' · ');
+  return `<p class="repo">${name}${bits ? ' — ' + bits : ''}</p>`;
+}
+
+function card(i) {
+  const usedBy = D.items.filter(x => (x.depends || []).includes(i.id)).map(x => x.id);
+  const mustOn = (D.devices || []).filter(d => (d.must || []).includes(i.id)).map(d => d.name);
+  const rows = [
+    (i.repos || []).length && ['Where', i.repos.map(repoBlock).join('')],
+    (i.prs || []).length && ['Pull requests', i.prs.map(u => `<a href="${esc(u)}">${esc(prLabel(u))}</a>`).join(', ')],
+    (i.part_of || []).length && ['Part of', i.part_of.map(link).join(', ')],
+    (i.depends || []).length && ['Needs', i.depends.map(link).join(', ')],
+    usedBy.length && ['Needed by', usedBy.map(link).join(', ')],
+    (i.devices || []).length && ['Cameras', i.devices.map(d => esc(devs[d]?.name || d)).join(', ')],
+    mustOn.length && ['Must be in builds for', esc(mustOn.join(', '))],
+    i.tested && ['Tested', md(i.tested)],
+    i.notes && ['Notes', md(i.notes)],
+  ].filter(Boolean);
+  return `<article class="card item" id="${i.id}"><div class="badges">${kindChip(i.kind)}${statusChip(i.status)}<span class="id">${i.id}</span></div>
+    <h3>${md(i.title)}</h3><p class="why">${md(i.why)}</p>
+    ${rows.length ? `<details${location.hash === '#' + i.id ? ' open' : ''}><summary>Details</summary><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></details>` : ''}</article>`;
+}
+
+function matches(i) {
+  if (state.kind !== 'all' && i.kind !== state.kind) return false;
+  if (state.status !== 'all' && i.status !== state.status) return false;
+  if (state.device !== 'all' && !(i.devices || []).includes(state.device)) return false;
+  if (!state.q) return true;
+  return JSON.stringify(i).toLowerCase().includes(state.q);
+}
+
+function render() {
+  const order = Object.keys(KINDS);
+  const list = D.items.filter(matches).sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+  document.getElementById('items').innerHTML = list.map(card).join('') || '<p class="empty">Nothing matches.</p>';
+}
+render();
+window.addEventListener('hashchange', () => { const el = document.getElementById(location.hash.slice(1));
+  if (el && el.classList.contains('item')) { el.querySelector('details')?.setAttribute('open', ''); } else if (el === null) { state.kind = 'all'; render(); } });
+if (location.hash) { const t = document.getElementById(location.hash.slice(1)); t?.scrollIntoView(); }
+</script>
+</body>
+</html>
