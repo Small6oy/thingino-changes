@@ -392,3 +392,17 @@ status = "unfixed"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 notes = "Seen 2026-11-17 (stream1 300000) and 2026-11-19 (aux 299000). Fix options: rvd keeps configured and runtime values apart, or rhkd re-checks the file after a session."
+
+[[items]]
+id = "FIX-libcurl-autoreconf-deps"
+kind = "fix"
+title = "thingino-libcurl: keep the autoreconf host tools in the dependency override"
+why = "Buildroot's libcurl now runs autoreconf; Thingino's libcurl override replaces libcurl's dependency list with `override`, which drops the autoconf/automake/libtool host tools Buildroot adds, so parallel image builds fail at libcurl's configure step."
+status = "local"
+part_of = ["GOAL-v4-firmware"]
+tested = "2026-11-19: found building Wyze Cam v3/v4 images from upstream master d78534cae"
+notes = "Upstream PR candidate; upstream CI passes, apparently because its builds don't hit the ordering."
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "fix-libcurl-autoreconf-deps"
+commits = ["a00ff7d9c"]
