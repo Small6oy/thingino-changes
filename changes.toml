@@ -233,6 +233,28 @@ repo = "thingino-firmware"
 branch = "webui-firmware-library"
 
 [[items]]
+id = "FEAT-webui-agent-fast"
+kind = "feature"
+title = "Web UI: faster cold agent builds, cache warm-up on login, lighter heartbeat"
+why = "With the agent caches expired (30 s / 60 s max age), pages waited for slow shell builds: runtime/all 2.7 s on the v4 and 5.8-7.4 s on the v3, config 1.8-4.4 s, and a footer heartbeat that built all 19 heartbeat fields to use two. The time went on forks in busybox sh, not on the data sources."
+status = "in-pr"
+waiting_on = "Review of thingino-firmware #2134."
+then = "After the merge and a firmware build with it, drop the overlay copies on both cameras (the undo script restores stock, or the next flash replaces them)."
+part_of = ["GOAL-webui-speed"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+prs = ["https://github.com/themactep/thingino-firmware/pull/2134"]
+tested = "2026-11-20, Wyze Cam v4 and v3: cold in-page runtime/all 2.7 -> 0.7-0.8 s (v4) and 5.8-7.4 -> 1.2-1.3 s (v3); config 1.8-2.4 -> 0.3-0.6 s (v4) and 3.0-4.4 -> 1.1-1.4 s (v3); heartbeat payload 1.0 -> 0.56 s (v4) and 1.45 -> 0.76 s (v3). Answers byte-identical to before; 12 pages without JS errors"
+notes = "Four commits: agent_json_string quotes plain values without awk (agent-lib, all adapters); raptor runtime/all preloads its 7 raptor.conf sections (65 -> 7 raptorctl calls), looks up shared values once per build and prints JSON fields without a subshell each; login.cgi starts the runtime/all and config builds detached; a new runtime/exposure resource gives the heartbeat its two exposure figures (runtime/heartbeat kept for thingino-ha). Both cameras run the four files in the overlay since 2026-11-20 (the v4/v3 adapter copy keeps their OSD-in-both-streams change). Cold config is still 1.1-1.5 s; the image/OSD helpers are next."
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "webui-agent-fast"
+commits = ["542a63cf0"]
+markers = [
+  { file = "package/thingino-raptor/files/agent-adapter", text = "AGENT_MEMO_STORAGE_PATH" },
+  { file = "package/thingino-webui/files/heartbeat-lib.sh", text = "agentctl runtime exposure" },
+]
+
+[[items]]
 id = "FEAT-t41-nna-l2"
 kind = "feature"
 title = "U-Boot: T41 L2 cache at 128 KiB so the NNA's ORAM is free"
@@ -387,6 +409,16 @@ notes = "Patch 0009's context now matches 0008's braced -M case; the fix (153af5
 repo = "thingino-firmware"
 branch = "uhttpd-gzip-optin"
 commits = ["153af5667"]
+
+[[items]]
+id = "ISSUE-v3-snapshot-503"
+kind = "issue"
+title = "Wyze Cam v3: the substream snapshot (/x/ch1.jpg) fails with 503 after about 3 s"
+why = "Seen while measuring the web UI on 2026-11-20: three requests in a row each took 2.8-3.0 s and returned 503 on the v3, while the v4 returned its ch1 snapshot in 0.8-1.2 s. Pages and HomeKit snapshots that use it get no picture."
+status = "unfixed"
+devices = ["wyze-cam-v3"]
+part_of = ["GOAL-webui-speed"]
+notes = "Not investigated yet. On the v4 the 2026-11-17 cause of failing snapshots was rvd's 64 KB jpeg1 ring overflowing at quality 75 (fixed there with quality 30); check whether the v3's stream1 JPEG has the same problem first."
 
 [[items]]
 id = "FIX-rhkd-config-save-bitrate"
