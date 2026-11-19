@@ -215,7 +215,7 @@ id = "FEAT-webui-firmware-library"
 kind = "feature"
 title = "Web UI: firmware upgrade page with a firmware library"
 why = "Upgrade as its own option, plus a card listing images from a local manifest with sha256 verification."
-status = "local"
+status = "in-pr"
 part_of = ["GOAL-v4-firmware"]
 notes = "Written, not yet tested on a camera."
 [[items.repos]]
