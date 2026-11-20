@@ -213,10 +213,10 @@ title = "faac 3.0 across the stack"
 part_of = ["GOAL-aac-update"]
 why = "Move AAC encoding to faac 3.0's API (ABI 3) and replace Helix AAC decoding with the libfaad3 bundled in faac 3.0; saves about 42 KB of flash on the v4 (faac 2.2 + helix-aac 180 KB, faac 3.0 + faad3 138 KB)."
 status = "in-pr"
-waiting_on = "raptor #92 merging: the firmware change needs a raptor that builds against faac 3.0. Also a faac release after 3.0: upstream fixed the uClibc header clash (faac#149) in master via faac#150, and our patch goes once a release has it."
-then = "Open the thingino-firmware PR (faac 3.0 package with libfaad3, prudynt-t and timps patches, raptor without libhelix-aac) with a thingino-raptor bump to the merged commit. rhkd needs nothing more: the thingino-rhkd package pins thingino-homekit v0.9.7 `050dbf6`, which builds on faac 2.x and 3.0. Drop rhkd's faac 2.x path once Thingino ships faac 3.0."
-prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/FreewareAdvancedAudio/faac/issues/149", "https://github.com/FreewareAdvancedAudio/faac/pull/150"]
-tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main. 2026-11-20: v3 and v4 images with faac 3.0 and libfaad3 (no Helix) flashed and running."
+waiting_on = "raptor #92 merging. Upstream Thingino moved to faac 3.0 itself (90e92fc4a, with its own uClibc patch, prudynt-t, timps and raptor encoder patches, and -fno-math-errno from #2121), so what we still carry is the libfaad3 part: thingino-firmware #2142 (decoder option, open) and draft #2143 (raptor selects it in place of libhelix-aac), which needs #92 merged and a thingino-raptor bump."
+then = "After #92 merges: rebase #2143 onto master (after #2142), bump THINGINO_RAPTOR_VERSION to the merged commit and delete 0002-faac-3-abi.patch in it, build v3 and v4 images, add the flash numbers, mark it ready. rhkd needs nothing more: the thingino-rhkd package pins thingino-homekit v0.9.7 `050dbf6`, which builds on faac 2.x and 3.0. Drop rhkd's faac 2.x path once Thingino ships faac 3.0."
+prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/themactep/thingino-firmware/pull/2142", "https://github.com/themactep/thingino-firmware/pull/2143", "https://github.com/FreewareAdvancedAudio/faac/issues/149", "https://github.com/FreewareAdvancedAudio/faac/pull/150", "https://github.com/FreewareAdvancedAudio/faac/pull/151"]
+tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main. 2026-11-20: v3 and v4 images with faac 3.0 and libfaad3 (no Helix) flashed and running. 2026-11-20 13:22: both cameras got libfaac/libfaad3 from the rebased branch (-fno-math-errno instead of -ffast-math) in the overlay; RTSP AAC, WebRTC via faad3 and the ONVIF AAC backchannel pass; rad CPU unchanged (v3 9.1 to 9.2 %, v4 2.6 to 2.2 %). faac master vs faac#151 on the cameras: 4.0x (T31) and 5.0x (T41) less encode CPU at 96 kbit/s, output byte-identical (thingino-firmware #2121 comment)."
 notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe. faac 3.0 needs a patch for uClibc (its common/endian.h shadows <endian.h>); prudynt-t and timps get ABI 3 patches. Firmware must bump thingino-raptor to a raptor with this change in the same step."
 [[items.repos]]
 repo = "raptor"
@@ -229,7 +229,7 @@ commits = ["783fd4f"]
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "faac-3.0"
-commits = ["58e47194d"]
+commits = ["5a7580e70", "6fb99a4c2"]
 
 [[items]]
 id = "FEAT-webui-firmware-library"
