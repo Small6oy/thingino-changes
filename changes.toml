@@ -200,11 +200,22 @@ waiting_on = "Review of raptor #88. It conflicts with #92 on one line of `rad/ra
 then = "thingino-raptor bump; then remove the test rad the cameras carry."
 part_of = ["GOAL-homekit"]
 prs = ["https://github.com/gtxaspec/raptor/pull/88"]
-tested = "2026-11-18, Wyze Cam v3 and v4"
+tested = "2026-11-18, Wyze Cam v3 and v4. 2026-11-20, Wyze Cam v3 and v4: headroom bench with all three outputs running, up to Opus complexity 10 + AAC 96k + 100 % CPU load: no resyncs or lost audio, longest SDK read gap 66 ms against the 400 ms buffer (see FEAT-rad-encoder-workers)."
 [[items.repos]]
 repo = "raptor"
 branch = "rad-second-codec"
 commits = ["6751291"]
+
+[[items]]
+id = "FEAT-rad-encoder-workers"
+kind = "feature"
+title = "rad: encoder worker threads for the extra outputs (tested, not adopted)"
+why = "rad captures and runs every encoder (audio, audio2, audio3) in one loop, so a slow encode could delay the next SDK read and lose audio. The experiment moved audio2/audio3 encoding onto worker threads (one shared, or one per output) to see whether the single loop needs that."
+status = "dropped"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+depends = ["FEAT-rad-extra-outputs"]
+tested = "2026-11-20, Wyze Cam v3 and v4: inline vs one worker vs one worker per output, 2 reps each, idle / all three outputs / Opus complexity 10 + AAC 96k / plus 100 % CPU load, 2-minute measured runs; host ASan and TSan with reader churn against audio-restart and ai-disable/ai-enable."
+notes = "Result: the single loop is enough. No resyncs or lost audio in any variant; the longest SDK read gap was about 60 ms (T31) / 45 ms (T41) against the 400 ms buffer, the same with or without workers. Workers only shorten the capture thread's time per chunk (T31 heavy p99 15 to 8-10 ms), at the same total CPU, +60-150 kB RSS and slightly more delivery jitter. Revisit only if encode work per chunk grows about tenfold. Test code was never meant for upstream and is not on any public branch."
 
 [[items]]
 id = "FEAT-faac3"
@@ -455,6 +466,17 @@ notes = "Patch 0009's context now matches 0008's braced -M case; the fix (153af5
 repo = "thingino-firmware"
 branch = "uhttpd-gzip-optin"
 commits = ["153af5667"]
+
+[[items]]
+id = "ISSUE-rad-clock-ai-enable"
+kind = "issue"
+title = "rad: AAC timestamps run about 5 % fast for ~1.2 s after ai-enable"
+why = "After ai-disable then ai-enable, rad stamps AAC frames on the audio and audio3 rings 60-61 ms apart instead of 64 ms (16 kHz, 1024 samples) for about 1.2 s (19 of 79 frames), then returns to the grid. Consumers that pace by timestamp (recordings, live view) see a short speed-up."
+status = "unfixed"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+part_of = ["GOAL-homekit"]
+tested = "2026-11-20, Wyze Cam v3 with the image rad (two rounds), and in the raptor host tests with the mock HAL (same 61 ms pattern, with and without encoder workers)."
+notes = "Not investigated. Likely the synthetic clock catching up after rad_clock_init re-initialises it on ai-enable; the whole-millisecond values point at the re-init base. Only matters if something toggles audio input during a recording or live view."
 
 [[items]]
 id = "ISSUE-v3-snapshot-503"
