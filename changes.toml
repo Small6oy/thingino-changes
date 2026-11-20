@@ -124,6 +124,17 @@ then = "Once their U-Boot change lands, test it on the v4; resume detection work
 devices = ["wyze-cam-v4"]
 notes = "Works on the v4 (~80 ms per frame on CPU0) after the U-Boot L2 change; paused until the maintainer's U-Boot fix for thingino-firmware issue #2093 lands."
 
+[[items]]
+id = "GOAL-ric-sensor-data"
+kind = "goal"
+title = "Sensor data page that charts what ric decides day and night on"
+why = "On raptor cameras the web UI's Sensor data page was built for daynightd and shows errors and no thresholds. Day/night is decided by ric (scene luma, total gain, a learned night baseline), so the page should chart those signals against ric's own thresholds."
+status = "parked"
+waiting_on = "The owner picking the work up again (paused 2026-11-20 before the camera test)."
+then = "Install ric + raptorctl (bind mount) and the page files on the v4, check the chart in Chrome, then the v3; open the raptor PR first, then the thingino PR that bumps the raptor pin."
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+notes = "Code done and tested off-camera; not yet installed on either camera."
+
 # ---------------------------------------------------------------------------------------------------
 # Features
 
@@ -253,6 +264,41 @@ markers = [
   { file = "package/thingino-raptor/files/agent-adapter", text = "AGENT_MEMO_STORAGE_PATH" },
   { file = "package/thingino-webui/files/heartbeat-lib.sh", text = "agentctl runtime exposure" },
 ]
+
+
+[[items]]
+id = "FEAT-ric-history"
+kind = "feature"
+title = "ric: sensor history and the live day line, readable through raptorctl"
+why = "The web UI needs ric's recent luma, gain and thresholds to chart its day/night decisions; raptorctl truncated replies over 2 KB."
+status = "parked"
+waiting_on = "Camera test on the v4 and v3 (paused 2026-11-20)."
+then = "Open the gtxaspec/raptor PR from the Small6oy/raptor fork."
+part_of = ["GOAL-ric-sensor-data"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+tested = "2026-11-20, host: ric test suite under ASan 184 pass, 0 fail (8 new history checks); v4 build with -Werror"
+notes = "ric keeps 300 samples (20 B each, one per [ircut] history_interval_sec, default 30 s, 0 = off); 'ric history' returns them as JSON with the trigger and thresholds; 'ric status' adds night_gain_baseline and day_gain_line; raptorctl reads replies into a 64 KB buffer (the frame limit)."
+[[items.repos]]
+repo = "raptor"
+branch = "ric-sensor-history"
+commits = ["02dc0c4"]
+
+[[items]]
+id = "FEAT-webui-ric-sensor-data"
+kind = "feature"
+title = "Web UI: Sensor data page charts ric's luma, gain and thresholds on raptor cameras"
+why = "Replaces the daynightd-only view (two failing CGIs on raptor) with ric's own signals and day/night lines."
+status = "parked"
+waiting_on = "FEAT-ric-history on the cameras and in a raptor PR."
+then = "Test in Chrome on the v4 and v3, then open the thingino-firmware PR with the raptor pin bump."
+part_of = ["GOAL-ric-sensor-data"]
+depends = ["FEAT-ric-history"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+notes = "New /x/json-ric-sensors.cgi in thingino-raptor (ric status, or ?history); tool-sensor-data.js polls every 5 s and charts luma (0-255) and gain (log) with night_luma, night_gain and the learned day line. daynightd cameras unchanged. check-plugins, shfmt, shellcheck and prettier clean."
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "webui-ric-sensor-data"
+commits = ["1a4d657be"]
 
 [[items]]
 id = "FEAT-t41-nna-l2"
