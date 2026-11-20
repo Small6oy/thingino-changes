@@ -173,7 +173,9 @@ id = "FEAT-rvd-aux-stream"
 kind = "feature"
 title = "rvd: on-demand aux stream for HomeKit"
 why = "A third H.264 encoder ([stream2], ring \"aux\") that only runs while something reads it, so HomeKit live view gets a matching size without retuning main or sub (which recordings and NVRs use). Keeps encoding a few seconds after the last reader so a quick reconnect doesn't restart it."
-status = "local"
+status = "parked"
+waiting_on = "Owner decision (2026-11-20): the aux stream's architecture is still open (on-demand third encoder vs. alternatives, framesource 2 while idle, per-session size)."
+then = "Settle the design, rebase onto upstream main, run test-all and raise it separately from #88. The T41 flip part went up alone as raptor #93."
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger; 2026-11-20: built into the flashed images (v3 aux 1280x720, v4 aux 1920x1080)"
@@ -338,17 +340,20 @@ id = "FIX-rvd-flip-after-start"
 kind = "fix"
 title = "rvd: apply the configured flip again once the channels run (T41)"
 why = "On the T41 the flip set during ISP setup, before any channel is enabled, is ignored: the camera came up unflipped after every rvd start or restart although raptor.conf asked for a flip."
-status = "local"
+status = "in-pr"
+waiting_on = "Review of gtxaspec/raptor #93 (standalone, raised 2026-11-20). Takes effect on the T41 only with raptor-hal #18."
+then = "Bump `THINGINO_RAPTOR_VERSION` past it; v4 images can then use upstream raptor for the flip."
+prs = ["https://github.com/gtxaspec/raptor/pull/93"]
 part_of = ["GOAL-v4-firmware"]
 depends = ["FIX-t41-isp-flip"]
 devices = ["wyze-cam-v4"]
-tested = "2026-11-20, Wyze Cam v4: in the flashed image, flipped right after start (log: flip applied after stream start)"
+tested = "2026-11-20, Wyze Cam v4: in the flashed image, flipped right after start (log: flip applied after stream start); PR branch on upstream main 101fb35 with raptor-hal v4-fixes: get-isp 1/1 at start and after `raptorctl rvd restart`, upstream main 0/0 both times; ASan test-all identical to main (146/1/3)"
 notes = "Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
-branch = "rvd-aux-t41-flip"
-commits = ["54c4c3b"]
+branch = "fix-t41-flip-after-start"
+commits = ["10b59a6", "54c4c3b"]
 markers = [{ file = "rvd/rvd_frame_loop.c", text = "rvd_apply_flip(st)" }]
 
 [[items]]
