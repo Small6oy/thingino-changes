@@ -70,6 +70,7 @@ must = [
   "FIX-gen3-antiflicker-auto",
   "FEAT-rvd-aux-stream",
   "FIX-rhkd-ring-incarnation",
+  "FIX-gen3-total-gain-linear",
 ]
 
 [[devices]]
@@ -413,13 +414,13 @@ waiting_on = "Review of raptor-hal #20."
 then = "Bump `THINGINO_RAPTOR_HAL_VERSION` and drop the Wyze Cam v4 gain workaround (`trigger=gain`, `night_gain=350000`) in the same change, after a test on a dark night."
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/20"]
-tested = "2026-11-18, Wyze Cam v4: held day at 91x"
-notes = "Not a must for the v4 yet: its raptor.conf carries a night_gain workaround. Once a build has this fix, remove the workaround in the same change."
+tested = "2026-11-18, Wyze Cam v4: held day at 91x. 2026-11-22 23:51, Wyze Cam v4: rvd from raptor integration/2026-11-22 + HAL v4-fixes 0d5cccf (this fix cherry-picked onto #16 + #19) under a street light: total_gain 423311 (log2 Q16) became 22455 (87.7x linear), and with ric's default night_gain 80000 it stayed day (luma 49-50); flip held after the restart."
+notes = "A v4 must since 2026-11-22: in our HAL branch v4-fixes (0d5cccf) and the camera's raptor.conf no longer carries the night_gain = 2000000000 workaround, so an rvd without it would force night under any light. The upstream Thingino wyze_cam4 profile workaround still waits for #20 to merge."
 [[items.repos]]
 repo = "raptor-hal"
 binaries = ["rvd"]
 branch = "fix-gen3-total-gain-linear"
-commits = ["a17f2e0"]
+commits = ["a17f2e0", "0d5cccf"]
 markers = [{ file = "src/hal_isp.c", text = "total_gain_log2q16_to_linear_q8" }]
 
 [[items]]
