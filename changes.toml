@@ -355,7 +355,7 @@ then = "Bump `THINGINO_RAPTOR_HAL_VERSION` in thingino-firmware, then drop the c
 part_of = ["GOAL-v4-firmware"]
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/16"]
-tested = "2026-11-22, Wyze Cam v4 (T41NQ, OS04D10): v4-fixes with #18 reverted and #16 applied, raptor without #93. Live set-vflip/set-hflip in all four combinations correct on main and sub, config 1/1 flipped at start, flipped after `raptorctl rvd restart` (also after a live 0/0 just before it), no kernel refusals, no colour cast, CPU/RSS unchanged. Matches andylee77's side-by-side on raptor-hal #18."
+tested = "2026-11-22, Wyze Cam v4 (T41NQ, OS04D10): v4-fixes with #18 reverted and #16 applied, raptor without #93. Live set-vflip/set-hflip in all four combinations correct on main and sub, config 1/1 flipped at start, flipped after `raptorctl rvd restart` (also after a live 0/0 just before it), no kernel refusals, no colour cast, CPU/RSS unchanged. Matches andylee77's side-by-side on raptor-hal #18. 2026-11-22, Wyze Cam v4 image 20261122-2250 (v4-fixes 9820d82, raptor integration/2026-11-22 without #93): flip 1/1 at boot and after `raptorctl rvd restart` (main, sub and aux upright), live set-vflip/set-hflip all four ways, no kernel refusals."
 notes = "Only covers sensors whose driver handles TX_ISP_EVENT_SENSOR_VFLIP (99 of 108 T41 drivers in the SDK; not gc2607, imx327, imx515, imx662, mis5011, os08a10, ov01a1s, rn6752, tp9963)."
 [[items.repos]]
 repo = "raptor-hal"
