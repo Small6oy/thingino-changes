@@ -26,7 +26,7 @@
 [meta]
 title = "Thingino changes"
 owner = "Small6oy"
-updated = "2026-11-20"
+updated = "2026-11-22"
 intro = "Fixes, features and goals we carry on top of upstream Thingino, raptor, raptor-hal and the HomeKit daemon, what each camera's builds must contain, and where each change stands upstream."
 
 # ---------------------------------------------------------------------------------------------------
@@ -54,6 +54,11 @@ fork = "https://github.com/Small6oy/thingino-homekit"
 id = "u-boot"
 upstream = "https://github.com/gtxaspec/u-boot-ingenic"
 
+[[repos]]
+id = "qemu"
+upstream = "https://github.com/gtxaspec/qemu"
+fork = "https://github.com/Small6oy/qemu"
+
 # ---------------------------------------------------------------------------------------------------
 [[devices]]
 id = "wyze-cam-v4"
@@ -61,8 +66,7 @@ name = "Wyze Cam v4"
 soc = "T41NQ"
 sensor = "OS04D10"
 must = [
-  "FIX-t41-isp-flip",
-  "FIX-rvd-flip-after-start",
+  "FIX-t41-sensor-flip",
   "FIX-gen3-antiflicker-auto",
   "FEAT-rvd-aux-stream",
   "FIX-rhkd-ring-incarnation",
@@ -255,29 +259,6 @@ repo = "thingino-firmware"
 branch = "webui-firmware-library"
 
 [[items]]
-id = "FEAT-webui-agent-fast"
-kind = "feature"
-title = "Web UI: faster cold agent builds, cache warm-up on login, lighter heartbeat"
-why = "With the agent caches expired (30 s / 60 s max age), pages waited for slow shell builds: runtime/all 2.7 s on the v4 and 5.8-7.4 s on the v3, config 1.8-4.4 s, and a footer heartbeat that built all 19 heartbeat fields to use two. The time went on forks in busybox sh, not on the data sources."
-status = "in-pr"
-waiting_on = "Review of thingino-firmware #2134."
-then = "After the merge and a firmware build with it, drop the overlay copies on both cameras (the undo script restores stock, or the next flash replaces them)."
-part_of = ["GOAL-webui-speed"]
-devices = ["wyze-cam-v3", "wyze-cam-v4"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2134"]
-tested = "2026-11-20, Wyze Cam v4 and v3: cold in-page runtime/all 2.7 -> 0.7-0.8 s (v4) and 5.8-7.4 -> 1.2-1.3 s (v3); config 1.8-2.4 -> 0.3-0.6 s (v4) and 3.0-4.4 -> 1.1-1.4 s (v3); heartbeat payload 1.0 -> 0.56 s (v4) and 1.45 -> 0.76 s (v3). Answers byte-identical to before; 12 pages without JS errors"
-notes = "Four commits: agent_json_string quotes plain values without awk (agent-lib, all adapters); raptor runtime/all preloads its 7 raptor.conf sections (65 -> 7 raptorctl calls), looks up shared values once per build and prints JSON fields without a subshell each; login.cgi starts the runtime/all and config builds detached; a new runtime/exposure resource gives the heartbeat its two exposure figures (runtime/heartbeat kept for thingino-ha). Both cameras run the four files in the overlay since 2026-11-20 (the v4/v3 adapter copy keeps their OSD-in-both-streams change). Cold config is still 1.1-1.5 s; the image/OSD helpers are next."
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "webui-agent-fast"
-commits = ["542a63cf0"]
-markers = [
-  { file = "package/thingino-raptor/files/agent-adapter", text = "AGENT_MEMO_STORAGE_PATH" },
-  { file = "package/thingino-webui/files/heartbeat-lib.sh", text = "agentctl runtime exposure" },
-]
-
-
-[[items]]
 id = "FEAT-ric-history"
 kind = "feature"
 title = "ric: sensor history and the live day line, readable through raptorctl"
@@ -329,16 +310,14 @@ branch = "t41-nna-oram"
 [[items]]
 id = "FIX-t41-isp-flip"
 kind = "fix"
-title = "raptor-hal: flip in the ISP only, on every isp_mode channel (T32/T41)"
+title = "raptor-hal: flip in the ISP only, on every isp_mode channel (T32/T41) (replaced by FIX-t41-sensor-flip)"
 why = "On the T41 the flip has to be set in the ISP for every channel; without it set-hflip/set-vflip fail (-4090) and the picture can't be flipped."
-status = "in-pr"
-waiting_on = "Review of raptor-hal #18."
-then = "Bump `THINGINO_RAPTOR_HAL_VERSION` in thingino-firmware."
+status = "dropped"
 part_of = ["GOAL-v4-firmware"]
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/18"]
 tested = "2026-11-19, Wyze Cam v4: set-hflip/set-vflip ok, get-isp 1/1"
-notes = "2026-11-19 regression: an rvd linked against a raptor-hal branch without this fix shipped to the v4 and lost the flip. Now a must-have for every v4 build."
+notes = "2026-11-19 regression: an rvd linked against a raptor-hal branch without this fix shipped to the v4 and lost the flip. 2026-11-22: raptor-hal #18 closed in favour of #16 (sensor-side flip). Its premise was wrong: the OS04D10 T41 driver does have a sensor flip (os04d10_set_hvflip, inlined into the ioctl handler). #18 alone also left the configured flip unapplied at start. Reverted on v4-fixes; the PR branch is kept in case sensors without a driver flip (9 of 108 T41 drivers) ever need an ISP fallback."
 [[items.repos]]
 repo = "raptor-hal"
 binaries = ["rvd"]
@@ -351,21 +330,39 @@ id = "FIX-rvd-flip-after-start"
 kind = "fix"
 title = "rvd: apply the configured flip again once the channels run (T41)"
 why = "On the T41 the flip set during ISP setup, before any channel is enabled, is ignored: the camera came up unflipped after every rvd start or restart although raptor.conf asked for a flip."
-status = "in-pr"
-waiting_on = "Review of gtxaspec/raptor #93 (standalone, raised 2026-11-20). Takes effect on the T41 only with raptor-hal #18."
-then = "Bump `THINGINO_RAPTOR_VERSION` past it; v4 images can then use upstream raptor for the flip."
+status = "dropped"
 prs = ["https://github.com/gtxaspec/raptor/pull/93"]
 part_of = ["GOAL-v4-firmware"]
 depends = ["FIX-t41-isp-flip"]
 devices = ["wyze-cam-v4"]
 tested = "2026-11-20, Wyze Cam v4: in the flashed image, flipped right after start (log: flip applied after stream start); PR branch on upstream main 101fb35 with raptor-hal v4-fixes: get-isp 1/1 at start and after `raptorctl rvd restart`, upstream main 0/0 both times; ASan test-all identical to main (146/1/3)"
-notes = "Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it."
+notes = "Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it. 2026-11-22: raptor #93 closed. It was only needed with raptor-hal #18; with #16 the sensor-side flip holds at start and after `rvd restart` without it (2026-11-22 v4 test). Still in the 2026-11-19 v4 image's raptor, where it is harmless."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
 branch = "fix-t41-flip-after-start"
 commits = ["10b59a6", "54c4c3b"]
 markers = [{ file = "rvd/rvd_frame_loop.c", text = "rvd_apply_flip(st)" }]
+
+[[items]]
+id = "FIX-t41-sensor-flip"
+kind = "fix"
+title = "raptor-hal: T41 flip on the sensor layer only (WLTB-Gino's raptor-hal #16)"
+why = "The T41 kernel refuses a flip set in both the sensor and the ISP at once (-4090, 'ISP and Sensor are prohibited from using mirr or flip together'), so set-hflip/set-vflip failed and the picture couldn't be flipped. Flipping on the sensor alone turns both streams."
+status = "in-pr"
+waiting_on = "Review of raptor-hal #16 (WLTB-Gino's PR; we tested it and closed our #18 and raptor #93 in its favour)."
+then = "Bump `THINGINO_RAPTOR_HAL_VERSION` in thingino-firmware, then drop the cherry-pick from v4-fixes."
+part_of = ["GOAL-v4-firmware"]
+devices = ["wyze-cam-v4"]
+prs = ["https://github.com/gtxaspec/raptor-hal/pull/16"]
+tested = "2026-11-22, Wyze Cam v4 (T41NQ, OS04D10): v4-fixes with #18 reverted and #16 applied, raptor without #93. Live set-vflip/set-hflip in all four combinations correct on main and sub, config 1/1 flipped at start, flipped after `raptorctl rvd restart` (also after a live 0/0 just before it), no kernel refusals, no colour cast, CPU/RSS unchanged. Matches andylee77's side-by-side on raptor-hal #18."
+notes = "Only covers sensors whose driver handles TX_ISP_EVENT_SENSOR_VFLIP (99 of 108 T41 drivers in the SDK; not gc2607, imx327, imx515, imx662, mis5011, os08a10, ov01a1s, rn6752, tp9963)."
+[[items.repos]]
+repo = "raptor-hal"
+binaries = ["rvd"]
+branch = "v4-fixes"
+commits = ["9820d82", "1f60db6"]
+markers = [{ file = "src/hal_isp.c", text = "Apply the flip on the sensor side" }]
 
 [[items]]
 id = "FIX-gen3-antiflicker-auto"
@@ -519,3 +516,39 @@ repo = "thingino-homekit"
 branch = "main"
 commits = ["f27d5a8"]
 markers = [{ file = "src/rhkd/bitrate.c", text = "had the live view's temporary bitrate" }]
+
+# --- gtxaspec/qemu issues we took on 2026-11-22 (Ingenic emulator; no camera build depends on them) ---
+
+[[items]]
+id = "ISSUE-qemu-avpu-timer-thread"
+kind = "issue"
+title = "qemu: encoder completion timer on its own thread, so silicon-time holds the T31X's 25 fps (gtxaspec/qemu #37)"
+why = "With ingenic-avpu.silicon-time=on, 4 of 20 runs of the T31X SDK demo still drop to 17-19 fps: the completion timer waits 10-20 ms behind a main loop busy with ISP frame passes. The owner named it the next step before silicon-time can become the default. Second part: count frames in guest time in the timing tests."
+status = "unfixed"
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/37. Pure model change, tested on the emulator. Commits and PR text carry no AI mention (checkpatch)."
+
+[[items]]
+id = "ISSUE-qemu-tcu-silicon"
+kind = "issue"
+title = "qemu: TCU prescaler divisors, TCSR bit 23 and TSR reset measured on a T31X and a T41NQ (gtxaspec/qemu #47)"
+why = "The TCU model's prescaler divisors (/1 to /1024) are unconfirmed on every part, the T41's TCSR bit 23 is writable but its effect over a full count is unmeasured, and TSR's reset value has to be read before the kernel touches it. Our Wyze Cam v3 (T31X) and v4 (T41NQ) can measure them."
+status = "unfixed"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/47. Measurements on a TCU channel the kernel, PWM and motors don't use; results posted to the issue, then the model change. TSR reset needs a U-Boot prompt (serial)."
+
+[[items]]
+id = "ISSUE-qemu-sensor-bayer"
+kind = "issue"
+title = "qemu: the image-sensor model's own Bayer pattern, so the raw frame no longer follows ISP 0x80018 (gtxaspec/qemu #25)"
+why = "On silicon the raw frame's Bayer order comes from the sensor and ignores the ISP's 0x80018; the model derives it from 0x80018, so a guest that sets that register differently changes the raw dump. Last item of the raw dump / raw input issue."
+status = "unfixed"
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/25. Model change plus a qtest; checked on the emulated v3/v4."
+
+[[items]]
+id = "ISSUE-qemu-corpora-readme"
+kind = "issue"
+title = "qemu: README note on the checks that need the stock firmware and library dumps (gtxaspec/qemu #38)"
+why = "The stock firmware and library dumps stay out of the public tree (vendor code), so nothing says which checks depend on them, where they are kept or how to re-run them locally. Third item of the silicon corpora issue."
+status = "in-pr"
+prs = ["https://github.com/gtxaspec/qemu/pull/49"]
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/38. PR #49 opened 2026-11-22 (Part of #38, no issue comment per user; branch on GitHub Small6oy/qemu). Docs only, in contrib/ingenic README's Silicon corpora section. 2026-11-22: commit a886b05671 on branch corpora-readme (~/qemu-corpora-readme on .5, off ingenic-txx 2c79171e89), checkpatch clean. No qtest/CI reads the dumps; the note lists what depends on them (libimp/MCU-firmware constants, wco2-sleep-e2e.py, stock-image boots, isp-trace diff) and how to re-run them. Where the owner keeps his dumps is not in the tree, so the note says 'outside the repository' and the PR asks. Issue comment + PR text drafted in upstream/qemu/issue38-corpora-readme-body.md, waiting for the user's OK before posting/pushing."
