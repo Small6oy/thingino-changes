@@ -26,7 +26,7 @@
 [meta]
 title = "Thingino changes"
 owner = "Small6oy"
-updated = "2026-11-22"
+updated = "2026-11-23"
 intro = "Fixes, features and goals we carry on top of upstream Thingino, raptor, raptor-hal and the HomeKit daemon, what each camera's builds must contain, and where each change stands upstream."
 
 # ---------------------------------------------------------------------------------------------------
@@ -149,8 +149,8 @@ why = "HomeKitADK-based daemon reading raptor's rings: live view (two RTP sessio
 status = "local"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-tested = "2026-11-20, Wyze Cam v3 and v4: 0.9.7 from the flashed 2026-11-19 images; live view with audio on both"
-notes = "Public v0.9.8 released 2026-11-20 (public main 63be501), matching the development line. Both cameras run 0.9.8 as an overlay binary on top of the 2026-11-19 images."
+tested = "2026-11-20, Wyze Cam v3 and v4: 0.9.7 from the flashed 2026-11-19 images; live view with audio on both. 2026-11-22, Wyze Cam v4 image 20261122-2250 and v3 image 20261122-2251: rhkd 0.9.10 built into the image"
+notes = "Public v0.9.10 released 2026-11-20 (public main 21930ef; drops faac 2.x). 2026-11-22: public 9345ccf makes the repo's web UI manifest match the package copy (themactep's patch 0004 from the #2085 review); no release for it. Both cameras run 0.9.10 from their 2026-11-22 images."
 [[items.repos]]
 repo = "thingino-homekit"
 branch = "main"
@@ -162,13 +162,13 @@ kind = "feature"
 title = "thingino-rhkd firmware package"
 why = "Builds rhkd into Thingino images (pinned release, init script, web UI page)."
 status = "in-pr"
-waiting_on = "Maintainer re-review of thingino-firmware #2085 (asked 2026-11-20)."
+waiting_on = "Merge of thingino-firmware #2085. themactep approved it on 2026-11-22 at 54c8fae56 (his four review-2 patches, applied as-is) and merged master into it (91b628bc6); out of draft, CI green, mergeable."
 then = "Bump rhkd to the next public release if there is one. The branch has master merged in (faac 3.0); rhkd is pinned to thingino-homekit v0.9.10 `21930ef`, which needs faac >= 3.0."
 part_of = ["GOAL-homekit", "GOAL-v4-firmware"]
 depends = ["FEAT-rhkd"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
 tested = "2026-11-20, Wyze Cam v3 and v4: images with the package flashed with settings kept; both stayed paired, live view and audio work"
-notes = "Pinned to rhkd v0.9.10 since 2026-11-20 (6370df5bb, on a merge of master cb5c6a7a1); package built for v3 and v4 against faac 3.0."
+notes = "Pinned to rhkd v0.9.10 since 2026-11-20 (6370df5bb, on a merge of master cb5c6a7a1); package built for v3 and v4 against faac 3.0. Review round 2 (2026-11-22) came as patches from themactep: web UI files only with thingino-webui, ADK patches fail instead of prompting, cfg-backup header only when a path is added (branch head 54c8fae56), and the rhkd repo manifest fix (public 9345ccf). Approved the same day."
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "add-thingino-rhkd"
@@ -229,8 +229,8 @@ title = "faac 3.0 across the stack"
 part_of = ["GOAL-aac-update"]
 why = "Move AAC encoding to faac 3.0's API (ABI 3) and replace Helix AAC decoding with the libfaad3 bundled in faac 3.0; saves about 42 KB of flash on the v4 (faac 2.2 + helix-aac 180 KB, faac 3.0 + faad3 138 KB)."
 status = "in-pr"
-waiting_on = "raptor #92 review and merge (every review comment answered on 2026-11-20: TNS on in rad and rsp, PCM buffers sized from libfaad3). Upstream Thingino moved to faac 3.0 itself (90e92fc4a, with its own uClibc patch, prudynt-t, timps and raptor encoder patches, and -fno-math-errno from #2121), so what we still carry is the libfaad3 part: thingino-firmware #2142 (decoder option, open; themactep LGTM 2026-11-21, his two non-blocking notes fixed in 35b1245f5 on 2026-11-22) and draft #2143 (raptor selects it in place of libhelix-aac), which needs #92 merged and a thingino-raptor bump."
-then = "After #92 merges: rebase #2143 onto master (after #2142), bump THINGINO_RAPTOR_VERSION to the merged commit and delete 0002-faac-3-abi.patch in it, build v3 and v4 images, add the flash numbers, mark it ready. rhkd needs nothing more: it dropped faac 2.x in v0.9.10 (2026-11-20), which #2085 pins."
+waiting_on = "raptor #92 review and merge (every review comment answered on 2026-11-20: TNS on in rad and rsp, PCM buffers sized from libfaad3; no reply since). The firmware decoder option, thingino-firmware #2142, merged on 2026-11-22 (793c48917), and faac #152 merged the same day. Upstream Thingino already ships faac 3.0 itself (90e92fc4a), so what is left is draft #2143 (raptor selects libfaad3 in place of libhelix-aac); themactep merged master, which has #2142, into it on 2026-11-22 (5a7ee8f4f)."
+then = "After #92 merges: in #2143 bump THINGINO_RAPTOR_VERSION to the merged commit and delete 0002-faac-3-abi.patch, build v3 and v4 images, add the flash numbers, mark it ready. rhkd needs nothing more: it dropped faac 2.x in v0.9.10 (2026-11-20), which #2085 pins."
 prs = ["https://github.com/gtxaspec/raptor/pull/92", "https://github.com/themactep/thingino-firmware/pull/2142", "https://github.com/themactep/thingino-firmware/pull/2143", "https://github.com/FreewareAdvancedAudio/faac/pull/152"]
 tested = "2026-11-19, Wyze Cam v3 and v4: rad (on rad-second-codec) encodes [audio] and [audio3] AAC-LC on faac 3.0 with identical ASC and frame rate; rsd backchannel decodes real AAC with faad3 (same PCM frame count as Helix); rwd turns the AAC ring into WebRTC Opus via faad3. Temporary bind mounts, reverted. raptor test suite matches upstream main. 2026-11-20: v3 and v4 images with faac 3.0 and libfaad3 (no Helix) flashed and running. 2026-11-20 13:22: both cameras got libfaac/libfaad3 from the rebased branch (-fno-math-errno instead of -ffast-math) in the overlay; RTSP AAC, WebRTC via faad3 and the ONVIF AAC backchannel pass; rad CPU unchanged (v3 9.1 to 9.2 %, v4 2.6 to 2.2 %). faac master vs faac#151 on the cameras: 4.0x (T31) and 5.0x (T41) less encode CPU at 96 kbit/s, output byte-identical (thingino-firmware #2121 comment). 2026-11-20 17:05, v3 and v4: #92 review follow-up a99b440 (rsd, rsp and rwd size their PCM output from faad_decoder_get_info().max_output_bytes): ONVIF AAC backchannel gives 17 x 2048-byte mono frames on the speaker ring for 17 AUs, rwd WebRTC Opus and an rsp RTMP push (16 kHz AAC to 48 kHz AAC-LC) each deliver 10 s of audio with every sample present; same as the image binaries. ASan suite unchanged. Temporary bind mounts, reverted."
 notes = "Stands on its own; touches HomeKit only through rhkd's AAC pipe. faac's uClibc fix (endian.h rename, faac #150) and -fno-math-errno (#151) are merged upstream; prudynt-t and timps get ABI 3 patches. Firmware must bump thingino-raptor to a raptor with this change in the same step."
@@ -252,9 +252,9 @@ id = "FEAT-webui-firmware-library"
 kind = "feature"
 title = "Web UI: firmware upgrade page with a firmware library"
 why = "Upgrade as its own option, plus a card listing images from a local manifest with sha256 verification."
-status = "in-pr"
+status = "local"
 part_of = ["GOAL-v4-firmware"]
-notes = "Written, not yet tested on a camera."
+notes = "Written, not yet tested on a camera; no PR raised (candidate C4 in the upstream notes)."
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "webui-firmware-library"
@@ -477,7 +477,7 @@ waiting_on = "Review of thingino-firmware #2066."
 part_of = ["GOAL-webui-speed"]
 prs = ["https://github.com/themactep/thingino-firmware/pull/2066"]
 tested = "2026-11-20, Wyze Cam v3 and v4: in the flashed images"
-notes = "Patch 0009's context now matches 0008's braced -M case; the fix (153af5667) was pushed to #2066 on 2026-11-20."
+notes = "Patch 0009's context now matches 0008's braced -M case; the fix (153af5667) was pushed to #2066 on 2026-11-20. 2026-11-22: themactep merged master into the branch (0f5b4502e); no review comments yet."
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "uhttpd-gzip-optin"
@@ -524,7 +524,7 @@ kind = "fix"
 title = "rhkd: a config save during a live view no longer keeps the temporary bitrate"
 why = "rvd's set-bitrate also updates its in-memory config, so saving the running config (e.g. from the web UI) while HomeKit has lowered a stream's bitrate for a live view stored that temporary bitrate in raptor.conf, and it survived the next restart. rhkd now remembers the temporary values it set and, after restoring the encoder (or at startup after a crash), puts the configured value back in raptor.conf if the file holds one of them. Values the owner chose are left alone."
 status = "in-pr"
-waiting_on = "Review of thingino-firmware #2085 (pins rhkd v0.9.10)."
+waiting_on = "Merge of thingino-firmware #2085 (pins rhkd v0.9.10; approved 2026-11-22)."
 prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
@@ -541,10 +541,14 @@ markers = [{ file = "src/rhkd/bitrate.c", text = "had the live view's temporary 
 [[items]]
 id = "ISSUE-qemu-avpu-timer-thread"
 kind = "issue"
-title = "qemu: encoder completion timer on its own thread, so silicon-time holds the T31X's 25 fps (gtxaspec/qemu #37)"
+title = "qemu: encoder completion timer on its own thread, so a busy main loop no longer delays silicon-time's job completions (gtxaspec/qemu #37)"
 why = "With ingenic-avpu.silicon-time=on, 4 of 20 runs of the T31X SDK demo still drop to 17-19 fps: the completion timer waits 10-20 ms behind a main loop busy with ISP frame passes. The owner named it the next step before silicon-time can become the default. Second part: count frames in guest time in the timing tests."
-status = "unfixed"
-notes = "Issue: https://github.com/gtxaspec/qemu/issues/37. Pure model change, tested on the emulator. Commits and PR text carry no AI mention (checkpatch)."
+status = "in-pr"
+prs = ["https://github.com/gtxaspec/qemu/pull/52"]
+waiting_on = "Our changes for the 2026-11-22 review of #52 (MERGE AFTER CHANGES): say Part of #37, not Resolves; the vCPU resume fix in its own commit ahead of the thread; an unrealize that stops the thread, or a comment that it lives for the process."
+then = "Rebase onto ingenic-txx, rerun the Ingenic qtests and checkpatch, force-push after the owner's OK, reply on the PR; then wait for the cherry-pick."
+tested = "2026-11-23, emulator only (thingino T31X GC2053 image, 1080p+360p H.264, silicon-time on), 20+20 interleaved 300 s runs on .5: aborts 10/20 -> 0/20, jobs on time 81% -> 94%, lateness p99 26.6 -> 4.1 ms, max 95.7 -> 26.8 ms; quiet-window fps 24.15-24.46 -> 24.58-24.73; 116 Ingenic qtests, devdoc check and checkpatch clean"
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/37. Pure model change, tested on the emulator. Commits and PR text carry no AI mention (checkpatch). No claim comment on the issue (user, 2026-11-22). PR #52 from Small6oy/qemu avpu-due-thread (1361730874), 3 commits: due thread + resume only paused vCPUs + NULL timer_del guard + 3 TCG qtests; ingenic_avpu_done gets the completion's guest time (in-tree half of item 2; the SDK-demo gate is the owner's, not in the tree); README paragraph. Upstream silicon-time aborts in mips_cpu_do_interrupt (cpu_resume on running vCPUs) in half of our runs; fixed in commit 1. Work tree ~/qemu-avpu37 on .5 (container qemu37-build, harness run/ab.sh + run/an2.py). Body: upstream/qemu/pr52-avpu-due-body.md. Review 2026-11-22 (https://github.com/gtxaspec/qemu/pull/52#issuecomment-7082691715): design and thread safety sound, 119/119 Ingenic qtests; on a loaded 8-core host his 8+8 T31X demo runs gave 56-130 frames on the branch vs 6-103 on 0.7.29 (150 quiet), so fps still follows host load and #37 is only partly fixed. Non-blocking: comment that avpu_holds is shared by every instance."
 
 [[items]]
 id = "ISSUE-qemu-tcu-silicon"
@@ -553,9 +557,11 @@ title = "qemu: TCU prescaler divisors, TCSR bit 23 and TSR reset measured on a T
 why = "The TCU model's prescaler divisors (/1 to /1024) are unconfirmed on every part, the T41's TCSR bit 23 is writable but its effect over a full count is unmeasured, and TSR's reset value has to be read before the kernel touches it. Our Wyze Cam v3 (T31X) and v4 (T41NQ) can measure them."
 status = "in-pr"
 prs = ["https://github.com/gtxaspec/qemu/pull/50"]
+waiting_on = "Our rebase of #50 onto the maintainer's TCSR gating change (aad9735ee8, in ingenic-0.7.29; the PR conflicts until then) plus review change 1. Changes 2 and 3 are only in the local commit 9ebc49211f; the PR head is still 029b63ed34."
+then = "Rebase, do change 1 his way (bit 23 stays in the 32-bit TCSR, chn-hold property in the T41 block, tcu_chn_hold() helper, no per-channel field, vmstate stays version 3, plus his T32LQ case), run the tcu and migrate qtests, force-push after the owner's OK, reply."
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-22, Wyze Cam v3 (T31X) and v4 (T41NQ), TCU ch2 and ch3 via emu/tools/tcu47/tcuprobe.c; registers restored, no reboot"
-notes = "Issue: https://github.com/gtxaspec/qemu/issues/47. Measured 2026-11-22 (logs emu/tools/tcu47/logs): prescaler codes 0-5 exact /1../1024, codes 6 and 7 /2 on both parts (model /1024); T41 bit 23 turns off the wrap at TDFR, count stands at 0xffff; a count above TDFR runs to 0xffff and rolls to 0 with no flag (both); T41 bits 11/14/16 gating (reported only). TSR reset NOT measured: no UART on either camera (user, 2026-11-22). Model branch tcu-silicon-47 in ~/qemu-tcu47 on .5 (commit 029b63ed34, qtests prescale/above/hold pass and fail on the old model, all 32 tcu + 11 migrate pass, checkpatch clean). Comment posted 2026-11-22 (https://github.com/gtxaspec/qemu/issues/47#issuecomment-7078086366), PR #50 opened from Small6oy/qemu tcu-silicon-47. Drafts in upstream/qemu/issue47-tcu-silicon-body.md."
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/47. Measured 2026-11-22 (logs emu/tools/tcu47/logs): prescaler codes 0-5 exact /1../1024, codes 6 and 7 /2 on both parts (model /1024); T41 bit 23 turns off the wrap at TDFR, count stands at 0xffff; a count above TDFR runs to 0xffff and rolls to 0 with no flag (both); T41 bits 11/14/16 gating (reported only). TSR reset NOT measured: no UART on either camera (user, 2026-11-22). Model branch tcu-silicon-47 in ~/qemu-tcu47 on .5 (commit 029b63ed34, qtests prescale/above/hold pass and fail on the old model, all 32 tcu + 11 migrate pass, checkpatch clean). Comment posted 2026-11-22 (https://github.com/gtxaspec/qemu/issues/47#issuecomment-7078086366), PR #50 opened from Small6oy/qemu tcu-silicon-47. Drafts in upstream/qemu/issue47-tcu-silicon-body.md. Reviews: 2026-11-22 12:12 (MERGE AFTER CHANGES, three changes), our reply 13:08, gating change landed 16:20, verdict repeated 17:14 with his own conflict resolution (https://github.com/gtxaspec/qemu/pull/50#issuecomment-7082691948). Bench questions he leaves open (not blocking): codes 6/7 on T32LQ, A1, T40XP; bit 23 on T32LQ and A1; PWM and interrupt rate while held; T41LQ/XQ."
 
 [[items]]
 id = "ISSUE-qemu-sensor-bayer"
@@ -564,14 +570,6 @@ title = "qemu: the image-sensor model's own Bayer pattern, so the raw frame no l
 why = "On silicon the raw frame's Bayer order comes from the sensor and ignores the ISP's 0x80018; the model derives it from 0x80018, so a guest that sets that register differently changes the raw dump. Last item of the raw dump / raw input issue."
 status = "in-pr"
 prs = ["https://github.com/gtxaspec/qemu/pull/51"]
+waiting_on = "The maintainer's cherry-pick of #51 (review verdict MERGE, 2026-11-22)."
 tested = "2026-11-22, emulated and real Wyze Cam v3 and v4: all 116 Ingenic qtests (new t20-raw/register, isp-vic t41/raw-bayer-rggb/-sensor), devdoc check, checkpatch per commit; emulated v3/v4 boot and stream, frame tap raw files bayer_rggb16le (gc2053) and bayer_bggr16le (os04d10) debayer right; real v3 raw RGGB and v4 raw BGGR (read-only kernel raw dump vs the ISP picture)."
-notes = "Issue: https://github.com/gtxaspec/qemu/issues/25. 2026-11-22: branch sensor-bayer (~/qemu-bayer on .5, off ingenic-txx 2c79171e89), commits 7297eb79e3 (image-sensor per-model order from the drivers' mbus_code, bayer= property; T21-T41 raw paths and RDMA demosaic follow it) + 46394282a1 (T10/T20/T30 raw writers ignore 0x80018). 2026-11-22: comment posted (https://github.com/gtxaspec/qemu/issues/25#issuecomment-7078303887), PR #51 opened from Small6oy/qemu sensor-bayer (user's OK); texts in upstream/qemu/issue25-sensor-bayer-body.md. Waiting on review. Sensor mirror/flip moving the order is not modelled (no sensor flip registers in the model)."
-
-[[items]]
-id = "ISSUE-qemu-corpora-readme"
-kind = "issue"
-title = "qemu: README note on the checks that need the stock firmware and library dumps (gtxaspec/qemu #38)"
-why = "The stock firmware and library dumps stay out of the public tree (vendor code), so nothing says which checks depend on them, where they are kept or how to re-run them locally. Third item of the silicon corpora issue."
-status = "in-pr"
-prs = ["https://github.com/gtxaspec/qemu/pull/49"]
-notes = "Issue: https://github.com/gtxaspec/qemu/issues/38. PR #49 opened 2026-11-22 (Part of #38, no issue comment per user; branch on GitHub Small6oy/qemu). Docs only, in contrib/ingenic README's Silicon corpora section. 2026-11-22: commit a886b05671 on branch corpora-readme (~/qemu-corpora-readme on .5, off ingenic-txx 2c79171e89), checkpatch clean. No qtest/CI reads the dumps; the note lists what depends on them (libimp/MCU-firmware constants, wco2-sleep-e2e.py, stock-image boots, isp-trace diff) and how to re-run them. Where the owner keeps his dumps is not in the tree, so the note says 'outside the repository' and the PR asks. Issue comment + PR text drafted in upstream/qemu/issue38-corpora-readme-body.md, waiting for the user's OK before posting/pushing."
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/25. 2026-11-22: branch sensor-bayer (~/qemu-bayer on .5, off ingenic-txx 2c79171e89), commits 7297eb79e3 (image-sensor per-model order from the drivers' mbus_code, bayer= property; T21-T41 raw paths and RDMA demosaic follow it) + 46394282a1 (T10/T20/T30 raw writers ignore 0x80018). 2026-11-22: comment posted (https://github.com/gtxaspec/qemu/issues/25#issuecomment-7078303887), PR #51 opened from Small6oy/qemu sensor-bayer (user's OK); texts in upstream/qemu/issue25-sensor-bayer-body.md. Review 2026-11-22 17:14: verdict MERGE (119/119 Ingenic qtests, checkpatch clean; https://github.com/gtxaspec/qemu/pull/51#issuecomment-7082691311); waiting for the cherry-pick. Sensor mirror/flip moving the order is not modelled (no sensor flip registers in the model)."
