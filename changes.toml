@@ -365,6 +365,24 @@ commits = ["9820d82", "1f60db6"]
 markers = [{ file = "src/hal_isp.c", text = "Apply the flip on the sensor side" }]
 
 [[items]]
+id = "FIX-rvd-save-jpeg-fresh"
+kind = "fix"
+title = "rvd: `raptorctl rvd save jpeg` returns a current frame, not the last one before the channel went idle"
+why = "The save handler started reading at write_seq, the newest frame already published. On an on-demand JPEG channel that is the last frame before the channel stopped, however long ago, so a snapshot at night could return a daytime picture. rhkd's HomeKit snapshots start one past write_seq and were not affected."
+status = "in-pr"
+waiting_on = "Review of gtxaspec/raptor #99."
+then = "Nothing beyond the next raptor bump."
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+prs = ["https://github.com/gtxaspec/raptor/pull/99"]
+tested = "2026-11-22, Wyze Cam v4: flip changed while jpeg1 was idle, then saved: stale in 3/3 with the image rvd, current in 5/5 with the fix and after 62 s idle; cold-channel save 20-170 ms. Builds for v3 and v4; host ASan test-all same as main eb748d9."
+[[items.repos]]
+repo = "raptor"
+binaries = ["rvd"]
+branch = "fix-save-jpeg-fresh-frame"
+commits = ["bc68538", "4c74b0b"]
+markers = [{ file = "rvd/rvd_ctrl.c", text = "ago: start one past it" }]
+
+[[items]]
 id = "FIX-gen3-antiflicker-auto"
 kind = "fix"
 part_of = ["GOAL-v4-firmware"]
