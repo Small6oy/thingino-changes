@@ -102,6 +102,15 @@ why = "Page loads were slow on the cameras: uncached assets, repeated agent roun
 status = "active"
 
 [[items]]
+id = "GOAL-local-ai"
+kind = "goal"
+title = "On-camera AI object detection"
+why = "Cameras detect person, pet and package (video) and sound events (baby crying, dog barking, alarm) locally and turn each into HomeKit events, OSD boxes and MQTT, with a web UI to switch classes on or off. No cloud. Person detection has a commercial precedent on the same silicon (the Aqara G100, a T31, runs a person-only detector on-camera); pet, package and sound are ours to prove. We benchmark against it."
+status = "active"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+notes = "Planning stage. v3 (T31) runs JZDL on the CPU with our own converted multi-class model; v4 (T41) runs venus on the NNA. Same ivs-status -> rmd -> rhkd/OSD/webui pipeline above either backend. Design rules from the G100: a per-object tracking gate before any report, and detect/notify/record as three independent per-class decisions. Sound detection (an audio classifier on the mic path) is a parallel track. All work lives in a dedicated repo, thingino-ai (a private repo plus a public mirror); the thingino integration code stays on the upstream forks and is mirrored there. Task breakdown and gates: research ai/tasks.md; benchmark method: ai/benchmark.md. v3 first."
+
+[[items]]
 id = "GOAL-v4-firmware"
 kind = "goal"
 title = "Our own firmware image for the Wyze Cam v4"
