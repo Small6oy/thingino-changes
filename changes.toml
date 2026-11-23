@@ -157,23 +157,6 @@ branch = "main"
 commits = ["783fd4f", "2755bf8"]
 
 [[items]]
-id = "FEAT-thingino-rhkd-package"
-kind = "feature"
-title = "thingino-rhkd firmware package"
-why = "Builds rhkd into Thingino images (pinned release, init script, web UI page)."
-status = "in-pr"
-waiting_on = "Merge of thingino-firmware #2085. themactep approved it on 2026-11-22 at 54c8fae56 (his four review-2 patches, applied as-is) and merged master into it (91b628bc6); out of draft, CI green, mergeable."
-then = "Bump rhkd to the next public release if there is one. The branch has master merged in (faac 3.0); rhkd is pinned to thingino-homekit v0.9.10 `21930ef`, which needs faac >= 3.0."
-part_of = ["GOAL-homekit", "GOAL-v4-firmware"]
-depends = ["FEAT-rhkd"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
-tested = "2026-11-20, Wyze Cam v3 and v4: images with the package flashed with settings kept; both stayed paired, live view and audio work"
-notes = "Pinned to rhkd v0.9.10 since 2026-11-20 (6370df5bb, on a merge of master cb5c6a7a1); package built for v3 and v4 against faac 3.0. Review round 2 (2026-11-22) came as patches from themactep: web UI files only with thingino-webui, ADK patches fail instead of prompting, cfg-backup header only when a path is added (branch head 54c8fae56), and the rhkd repo manifest fix (public 9345ccf). Approved the same day."
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "add-thingino-rhkd"
-
-[[items]]
 id = "FEAT-rvd-aux-stream"
 kind = "feature"
 title = "rvd: on-demand aux stream for HomeKit"
@@ -517,24 +500,6 @@ notes = "Build with -b \"... motion-light\" -K \"BR2_PACKAGE_THINGINO_MOTION_LIG
 repo = "thingino-firmware"
 branch = "motion-light"
 commits = ["9d2e9289d"]
-
-[[items]]
-id = "FIX-rhkd-config-save-bitrate"
-kind = "fix"
-title = "rhkd: a config save during a live view no longer keeps the temporary bitrate"
-why = "rvd's set-bitrate also updates its in-memory config, so saving the running config (e.g. from the web UI) while HomeKit has lowered a stream's bitrate for a live view stored that temporary bitrate in raptor.conf, and it survived the next restart. rhkd now remembers the temporary values it set and, after restoring the encoder (or at startup after a crash), puts the configured value back in raptor.conf if the file holds one of them. Values the owner chose are left alone."
-status = "in-pr"
-waiting_on = "Merge of thingino-firmware #2085 (pins rhkd v0.9.10; approved 2026-11-22)."
-prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
-part_of = ["GOAL-homekit"]
-devices = ["wyze-cam-v3", "wyze-cam-v4"]
-tested = "2026-11-20, Wyze Cam v3 (test instance): config save mid-session left [stream2] bitrate = 299000; repaired to 1500000 at session end, and at startup after a kill -9"
-notes = "Seen 2026-11-17 (stream1 300000) and 2026-11-19 (aux 299000). rhkd 0.9.8: public release v0.9.8 (63be501), running on both cameras (overlay). The cleaner fix would be a non-persisting set-bitrate in rvd; not raised."
-[[items.repos]]
-repo = "thingino-homekit"
-branch = "main"
-commits = ["f27d5a8"]
-markers = [{ file = "src/rhkd/bitrate.c", text = "had the live view's temporary bitrate" }]
 
 # --- gtxaspec/qemu issues we took on 2026-11-22 (Ingenic emulator; no camera build depends on them) ---
 
