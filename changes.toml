@@ -231,18 +231,6 @@ branch = "faac-3.0"
 commits = ["5a7580e70", "6fb99a4c2"]
 
 [[items]]
-id = "FEAT-webui-firmware-library"
-kind = "feature"
-title = "Web UI: firmware upgrade page with a firmware library"
-why = "Upgrade as its own option, plus a card listing images from a local manifest with sha256 verification."
-status = "local"
-part_of = ["GOAL-v4-firmware"]
-notes = "Written, not yet tested on a camera; no PR raised (candidate C4 in the upstream notes)."
-[[items.repos]]
-repo = "thingino-firmware"
-branch = "webui-firmware-library"
-
-[[items]]
 id = "FEAT-ric-history"
 kind = "feature"
 title = "ric: sensor history and the live day line, readable through raptorctl"
