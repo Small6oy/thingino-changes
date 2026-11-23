@@ -92,7 +92,7 @@ title = "Native Apple HomeKit on Thingino cameras"
 why = "Cameras appear in Apple Home on their own, without a bridge: live view, two-way audio, motion, HomeKit Secure Video recording."
 status = "active"
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-prs = ["https://github.com/themactep/thingino-firmware/pull/2085"]
+notes = "Upstream since 2026-11-22: thingino-firmware #2085 merged (b56778145), adding the thingino-rhkd package pinned to rhkd v0.9.10. Future rhkd releases go up as version-bump PRs to package/thingino-rhkd. Open: the maintainers may want rhkd under their own GitHub organisation; if so, transfer or fork the repo and update THINGINO_RHKD_SITE."
 
 [[items]]
 id = "GOAL-webui-speed"
@@ -150,7 +150,7 @@ status = "local"
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-20, Wyze Cam v3 and v4: 0.9.7 from the flashed 2026-11-19 images; live view with audio on both. 2026-11-22, Wyze Cam v4 image 20261122-2250 and v3 image 20261122-2251: rhkd 0.9.10 built into the image"
-notes = "Public v0.9.10 released 2026-11-20 (public main 21930ef; drops faac 2.x). 2026-11-22: public 9345ccf makes the repo's web UI manifest match the package copy (themactep's patch 0004 from the #2085 review); no release for it. Both cameras run 0.9.10 from their 2026-11-22 images."
+notes = "Public v0.9.10 released 2026-11-20 (public main 21930ef; drops faac 2.x). 2026-11-22: public 9345ccf makes the repo's web UI manifest match the package copy (themactep's patch 0004 from the #2085 review); no release for it. Both cameras run 0.9.10 from their 2026-11-22 images. Ships in upstream Thingino through the thingino-rhkd package (#2085, merged 2026-11-22); the daemon itself is developed here, so it stays local."
 [[items.repos]]
 repo = "thingino-homekit"
 branch = "main"
@@ -179,13 +179,24 @@ markers = [
 ]
 
 [[items]]
+id = "FEAT-rhkd-hksv3"
+kind = "feature"
+title = "rhkd: HKSV3 (iOS 27 secure video) for the Wyze Cam v4"
+why = "iOS 27 adds a new camera service set: multi-tier RTP, WebRTC remote view with SFrame end-to-end encryption, motion zones, 4K stream and record. It could use raptor's native H.265 with no re-encode. rhkd's classic HKSV keeps working on iOS 27."
+status = "parked"
+waiting_on = "Owner decision (2026-11-18, 'try later'). The reference implementation, HAP-NodeJS PR #1132, isn't merged yet."
+then = "Read Apple's HomeKit Secure Video Open Source Compatibility Guide and HAP-NodeJS #1132, then write a design note (services, what hds/recorder/fmp4 code is reusable, the WebRTC stack) before any code. Constraints: HEVC only, one path per accessory, hvc1 + prft in the fMP4. The Wyze Cam v3 stays classic."
+part_of = ["GOAL-homekit"]
+devices = ["wyze-cam-v4"]
+
+[[items]]
 id = "FEAT-rad-extra-outputs"
 kind = "feature"
 title = "rad: extra encoder outputs on the same capture"
 why = "[audio2]/[audio3] give a second codec (AAC-LC for HKSV next to Opus for live view) from one microphone capture, on demand."
 status = "in-pr"
 waiting_on = "Review of raptor #88. It conflicts with #92 on one line of `rad/rad_codec_aac.c`; whichever lands second rebases."
-then = "thingino-raptor bump; then remove the test rad the cameras carry."
+then = "thingino-raptor bump; then remove the test rad the cameras carry. Once the package / rhkd-setup configures [audio2] opus + [audio3] aac and fails clearly without extra outputs: remove rhkd's audio transcoding fallback (aacpipe.c, opus/faac in deps.sh and build/Makefile, the fallback paths in recorder.c); keep libopus for talk-back."
 part_of = ["GOAL-homekit"]
 prs = ["https://github.com/gtxaspec/raptor/pull/88"]
 tested = "2026-11-18, Wyze Cam v3 and v4. 2026-11-20, Wyze Cam v3 and v4: headroom bench with all three outputs running, up to Opus complexity 10 + AAC 96k + 100 % CPU load: no resyncs or lost audio, longest SDK read gap 66 ms against the 400 ms buffer (see FEAT-rad-encoder-workers)."
@@ -432,7 +443,7 @@ title = "rvd: T41 JPEG rings too small for full-size snapshots (jpeg0 never publ
 why = "A 1440p JPEG at quality 75 is ~1.4 MB, larger than the 0.9 MB ring, so every jpeg0 frame is dropped (ENOSPC) and full-size snapshots fail; HomeKit uses jpeg1 at quality 30 meanwhile."
 status = "in-pr"
 waiting_on = "raptor #57 (not ours) merging; we tested it on the v4."
-then = "thingino-raptor bump; full-size snapshots (`jpeg0`) then work on the T41."
+then = "thingino-raptor bump; full-size snapshots (`jpeg0`) then work on the T41. Then drop the Wyze Cam v4's `jpeg_quality = 30` workaround."
 devices = ["wyze-cam-v4"]
 part_of = ["GOAL-homekit"]
 prs = ["https://github.com/gtxaspec/raptor/pull/57"]
