@@ -168,22 +168,23 @@ commits = ["783fd4f", "2755bf8"]
 [[items]]
 id = "FEAT-rvd-aux-stream"
 kind = "feature"
-title = "rvd: on-demand aux stream for HomeKit"
-why = "A third H.264 encoder ([stream2], ring \"aux\") that only runs while something reads it, so HomeKit live view gets a matching size without retuning main or sub (which recordings and NVRs use). Keeps encoding a few seconds after the last reader so a quick reconnect doesn't restart it."
-status = "parked"
-waiting_on = "Owner decision (2026-11-20): the aux stream's architecture is still open (on-demand third encoder vs. alternatives, framesource 2 while idle, per-session size)."
-then = "Settle the design, rebase onto upstream main, run test-all and raise it separately from #88. The T41 flip part went up alone as raptor #93."
+title = "rvd: on-demand extra video streams (HomeKit aux) on spare framesource slots"
+why = "An extra H.264 encoder per spare framesource slot ([stream2], our cameras name its ring \"aux\" with `ring = aux`) that only runs while something reads it, so HomeKit live view gets a matching size without retuning main or sub (which recordings and NVRs use). Keeps encoding a few seconds after the last reader so a quick reconnect doesn't restart it. Generalised 2026-11-24 from the hard-coded aux after the team asked for N streams where the hardware allows."
+status = "in-pr"
+waiting_on = "Review of raptor #103 (CI waits for maintainer approval)."
+then = "thingino-raptor bump + refresh Thingino's digital-zoom patch (conflicts in rvd_ctrl.c do_stream_restart_ex, unless #87 merges first); drop it from the raptor integration branch. Optional: rhkd finds the ring through rvd `status` (`ring` field) instead of the name `aux`, so `ring = aux` stops being needed."
 part_of = ["GOAL-homekit"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger; 2026-11-20: built into the flashed images (v3 aux 1280x720, v4 aux 1920x1080)"
-notes = "Images built 2026-11-19 take raptor from branch integration/2026-11-19 (cf1e71a): this feature + FIX-rvd-flip-after-start + FIX-ringdump-reopen-stale + FEAT-rad-extra-outputs + FEAT-faac3 + Thingino's digital-zoom package patch (overrides skip package patches)."
+prs = ["https://github.com/gtxaspec/raptor/pull/103"]
+tested = "2026-11-19, Wyze Cam v3 (1280x720) and v4 (1920x1080): live view, resize during a session, linger. 2026-11-24, N-stream rvd on both (bind mount): v4 aux 1080p, 720p/1080p/1440p resize, privacy pause, main restart re-attach; v3 aux 720p, 1080p refused for rmem and rolled back with main untouched. test-all ASan/TSan 179/1/3 vs main 146/1/3."
+notes = "Needs `ring = aux` in [stream2] of raptor.conf (both cameras have it since 2026-11-24; without it the ring is called stream2 and rhkd can't find it). Images built from 2026-11-24 take raptor from integration/2026-11-24 (rvd-extra-streams in place of rvd-aux-stream). The old hard-coded branch rvd-aux-stream (0def512) is superseded."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
-branch = "rvd-aux-stream"
-commits = ["0def512", "6d511dd", "284f623"]
+branch = "rvd-extra-streams"
+commits = ["c6103bb", "0bbc04e"]
 markers = [
-  { file = "rvd/rvd_pipeline.c", text = "aux: attached as stream" },
+  { file = "rvd/rvd_pipeline.c", text = "]: attached as stream" },
   { file = "rvd/rvd_frame_loop.c", text = "reader back within linger" },
 ]
 
