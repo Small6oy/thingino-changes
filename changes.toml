@@ -495,7 +495,7 @@ why = "The Wyze Cam v4's spotlight should switch on for motion after dark. Until
 status = "local"
 devices = ["wyze-cam-v4"]
 tested = "2026-11-20, Wyze Cam v4: script with forced night switched the spotlight on at motion through `light white`, off on stop; shellcheck clean; package builds and installs in the v4 dev tree; 2026-11-20 15:37: in the v4 image 20261120-1340 (S96, single instance after the flash)"
-notes = "Build with -b \"... motion-light\" -K \"BR2_PACKAGE_THINGINO_MOTION_LIGHT=y\". Before flashing the first image that has it, take /usr/sbin/motion-light and /etc/init.d/S33motion-light out of the v4's /etc/cfg-backup.list (the restore would bring back the old daemon next to S96motion-light). GPIO 47 (dim channel) stays low via /etc/gpio.conf. Upstream PR candidate."
+notes = "Build with -b \"... motion-light\" -K \"BR2_PACKAGE_THINGINO_MOTION_LIGHT=y\". Before flashing the first image that has it, take /usr/sbin/motion-light and /etc/init.d/S33motion-light out of the v4's /etc/cfg-backup.list (the restore would bring back the old daemon next to S96motion-light). GPIO 47 (dim channel) stays low via /etc/gpio.conf. Not going upstream (owner, 2026-11-23): others are working on motion actions in upstream raptor-motion."
 [[items.repos]]
 repo = "thingino-firmware"
 branch = "motion-light"
