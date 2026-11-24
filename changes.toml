@@ -291,7 +291,7 @@ part_of = ["GOAL-local-ai"]
 why = "An open replacement for Ingenic's venus on the T41 NNA. It runs the same venus .bin models with the same output bit for bit, as a 142 KB static binary, without venus's 4.5-11.2 MB libraries, its 20 MiB nmem carve-out, the 128K-L2 U-Boot/module change or /dev/soc-nna: the CPU feeds the NN unit directly. It's the path to NNA detection in upstream images without vendor blobs or boot-time memory reservations."
 status = "active"
 devices = ["wyze-cam-v4"]
-tested = "2026-11-24, QEMU 0.7.26 + gtxaspec ingenic-txx 05d871d66a model (host oracle): yolov5n heads byte-identical to venus on two frames, all 60 convs equal the CPU conv. 2026-11-24, Wyze Cam v4, stock (no nmem, 256K L2, daemons running): heads equal to venus's silicon output on both frames; 825 ms min / 849 avg per frame (speed round 2), 16-18 MB peak RSS. Same boot as venus (nmem 20M + 128K L2): onna 913 ms avg, venus 0.1.2-5 78.8 ms, venus 0.3.7-1 79.8 ms (output identical to 0.1.2-5; its first silicon run)."
+tested = "2026-11-24, QEMU 0.7.26 + gtxaspec ingenic-txx 05d871d66a model (host oracle): yolov5n heads byte-identical to venus on two frames, all 60 convs equal the CPU conv. 2026-11-24, Wyze Cam v4, stock (no nmem, 256K L2, daemons running): heads equal to venus's silicon output on both frames; 412 ms min / 433 avg per frame (speed round 3), 15.1 MB peak RSS. Same boot as venus (nmem 20M + 128K L2): onna 913 ms avg, venus 0.1.2-5 78.8 ms, venus 0.3.7-1 79.8 ms (output identical to 0.1.2-5; its first silicon run)."
 notes = "Source: Small6oy/thingino-ai tools/onna (C99: nnacpu.c CPU ops, nnabin.c validating .bin + graph loader, nnaeng.c NNA conv driver with its own tiling, be_mxu3.c the NN instructions as .word, oracle/ the host test harness built from QEMU's ingenic-nna.c at build time); notes docs/nna-runtime.md; merged PRs #13, #14, #16. Licence not chosen yet (ojzdl: MIT, Thingino Project). The NN unit runs with no driver setup; the T41's F RAM is sliced (2-bit slices 0x37/4 lines apart). Remaining time is CPU (requant ~430 ms, F packing ~250 ms per frame); the NN instructions cost nanoseconds. Next: speed round 3 (requant on MXU3, F once per band, no per-instruction calls), then a raptor-hal backend like FEAT-ojzdl. Research notes: nna/open-runtime.md, nna/c-driver-plan.md."
 
 [[items]]
@@ -566,6 +566,23 @@ waiting_on = "The maintainer's re-review of #52: all three review changes pushed
 then = "Nothing beyond his cherry-pick; #37 stays open for its second item (silicon-time in the timing tests, frames counted in guest time)."
 tested = "2026-11-23, emulator only (thingino T31X GC2053 image, 1080p+360p H.264, silicon-time on), 20+20 interleaved 300 s runs on .5: aborts 10/20 -> 0/20, jobs on time 81% -> 94%, lateness p99 26.6 -> 4.1 ms, max 95.7 -> 26.8 ms; quiet-window fps 24.15-24.46 -> 24.58-24.73; after the review split (2026-11-23): 119 Ingenic qtests, devdoc check and checkpatch clean, unrealize tried with a throwaway start/unrealize/start build"
 notes = "Issue: https://github.com/gtxaspec/qemu/issues/37. Pure model change, tested on the emulator. Commits and PR text carry no AI mention (checkpatch). No claim comment on the issue (user, 2026-11-22). PR #52 is Part of #37 (item 1, the thread); item 2 (silicon-time on in the timing tests, frames counted in guest time) stays with the owner's harness. Review 2026-11-22 (gtxaspec): merge after small changes; done and force-pushed 2026-11-23. Small6oy/qemu avpu-due-thread (6c9f05fa90, on ingenic-txx 26129bea50), 4 commits: resume only vCPUs a hold paused + NULL timer_del guard (own commit, upstream silicon-time aborts in mips_cpu_do_interrupt in half our runs); due thread + unrealize (oneshot BH + join) + 3 TCG qtests; ingenic_avpu_done gets the completion's guest time; README paragraph. Frames per second still follow host load (his SDK demo runs and ours). Work tree ~/qemu-avpu37 on .5 (container qemu37-build, harness run/ab.sh + run/an2.py). Body: upstream/qemu/pr52-avpu-due-body.md, reply: upstream/qemu/pr52-reply-review.md."
+
+[[items]]
+id = "FIX-qemu-t41-nna-wram"
+kind = "fix"
+title = "qemu: a T41NQ's NNA W RAM holds 288 entries, not 1024 (gtxaspec/qemu #64)"
+why = "ingenic-nna gave the T41 1024 W entries; a T41NQ keeps 288 (72 KiB) and wraps the write pointer to entry 0. NNA code that keeps more than 288 entries loaded passes in the emulator and reads the wrong weights on silicon (FEAT-onna hit it)."
+status = "in-pr"
+prs = ["https://github.com/gtxaspec/qemu/pull/64"]
+waiting_on = "The maintainer's review of #64."
+then = "Address the review; after the merge, drop this item."
+devices = ["wyze-cam-v4"]
+tested = "2026-11-24, Wyze Cam v4: wprobe, 72 groups (288 entries) in order, 73/108 groups -> entry 0 reads group 72, 256 groups -> group 216. Patched model: the same table; ingenic-nna-test 21/21 (new engine/w-wrap fails on the old model); venus 0.1.2-5 trace 661,920/661,920 read-backs unchanged; checkpatch clean"
+notes = "NN_WRAM_T41 256 KiB -> 72 KiB (nn_wcap's modulo then wraps at 288), qtest engine/w-wrap, program record limit 512 -> 1280. Body: upstream/qemu/pr-t41-nna-wram-body.md."
+[[items.repos]]
+repo = "qemu"
+branch = "t41-nna-wram"
+commits = ["430fa84bad"]
 
 [[items]]
 id = "ISSUE-qemu-t41-f-noprogram"
