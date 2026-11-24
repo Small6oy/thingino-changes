@@ -26,7 +26,7 @@
 [meta]
 title = "Thingino changes"
 owner = "Small6oy"
-updated = "2026-11-24"
+updated = "2026-11-25"
 intro = "Fixes, features and goals we carry on top of upstream Thingino, raptor, raptor-hal and the HomeKit daemon, what each camera's builds must contain, and where each change stands upstream."
 
 # ---------------------------------------------------------------------------------------------------
@@ -372,7 +372,7 @@ part_of = ["GOAL-v4-firmware"]
 depends = ["FIX-t41-isp-flip"]
 devices = ["wyze-cam-v4"]
 tested = "2026-11-20, Wyze Cam v4: in the flashed image, flipped right after start (log: flip applied after stream start); PR branch on upstream main 101fb35 with raptor-hal v4-fixes: get-isp 1/1 at start and after `raptorctl rvd restart`, upstream main 0/0 both times; ASan test-all identical to main (146/1/3)"
-notes = "Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it. 2026-11-22: raptor #93 closed. It was only needed with raptor-hal #18; with #16 the sensor-side flip holds at start and after `rvd restart` without it (2026-11-22 v4 test). Still in the 2026-11-19 v4 image's raptor, where it is harmless."
+notes = "2026-11-24: gtxaspec landed his own version on upstream main (3cb13e5); integration branches from 2026-11-25b get it from main. Also explains the older note that `raptorctl rvd restart` loses the flip while a reboot kept it. 2026-11-22: raptor #93 closed. It was only needed with raptor-hal #18; with #16 the sensor-side flip holds at start and after `rvd restart` without it (2026-11-22 v4 test). Still in the 2026-11-19 v4 image's raptor, where it is harmless."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
@@ -385,19 +385,19 @@ id = "FIX-t41-sensor-flip"
 kind = "fix"
 title = "raptor-hal: T41 flip on the sensor layer only (WLTB-Gino's raptor-hal #16)"
 why = "The T41 kernel refuses a flip set in both the sensor and the ISP at once (-4090, 'ISP and Sensor are prohibited from using mirr or flip together'), so set-hflip/set-vflip failed and the picture couldn't be flipped. Flipping on the sensor alone turns both streams."
-status = "in-pr"
-waiting_on = "Review of raptor-hal #16 (WLTB-Gino's PR; we tested it and closed our #18 and raptor #93 in its favour)."
-then = "Bump `THINGINO_RAPTOR_HAL_VERSION` in thingino-firmware, then drop the cherry-pick from v4-fixes."
+status = "parked"
+waiting_on = "thingino-firmware bump PR (thingino-raptor to 36d229c, thingino-raptor-hal to f7381ac), being prepared 2026-11-25."
+then = "Remove this item once Thingino pins raptor-hal at or after f7381ac."
 part_of = ["GOAL-v4-firmware"]
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/16"]
 tested = "2026-11-22, Wyze Cam v4 (T41NQ, OS04D10): v4-fixes with #18 reverted and #16 applied, raptor without #93. Live set-vflip/set-hflip in all four combinations correct on main and sub, config 1/1 flipped at start, flipped after `raptorctl rvd restart` (also after a live 0/0 just before it), no kernel refusals, no colour cast, CPU/RSS unchanged. Matches andylee77's side-by-side on raptor-hal #18. 2026-11-22, Wyze Cam v4 image 20261122-2250 (v4-fixes 9820d82, raptor integration/2026-11-22 without #93): flip 1/1 at boot and after `raptorctl rvd restart` (main, sub and aux upright), live set-vflip/set-hflip all four ways, no kernel refusals."
-notes = "Only covers sensors whose driver handles TX_ISP_EVENT_SENSOR_VFLIP (99 of 108 T41 drivers in the SDK; not gc2607, imx327, imx515, imx662, mis5011, os08a10, ov01a1s, rn6752, tp9963)."
+notes = "Landed on upstream raptor-hal main 2026-11-24 as 00b0e77 (gtxaspec's rework of #16: same code, comments only; also covers T33). Only covers sensors whose driver handles TX_ISP_EVENT_SENSOR_VFLIP (99 of 108 T41 drivers in the SDK; not gc2607, imx327, imx515, imx662, mis5011, os08a10, ov01a1s, rn6752, tp9963)."
 [[items.repos]]
 repo = "raptor-hal"
 binaries = ["rvd"]
-branch = "v4-fixes"
-commits = ["9820d82", "1f60db6"]
+branch = "v4-fixes-2"
+commits = ["00b0e77", "9820d82", "1f60db6"]
 markers = [{ file = "src/hal_isp.c", text = "Apply the flip on the sensor side" }]
 
 [[items]]
@@ -405,17 +405,18 @@ id = "FIX-rvd-save-jpeg-fresh"
 kind = "fix"
 title = "rvd: `raptorctl rvd save jpeg` returns a current frame, not the last one before the channel went idle"
 why = "The save handler started reading at write_seq, the newest frame already published. On an on-demand JPEG channel that is the last frame before the channel stopped, however long ago, so a snapshot at night could return a daytime picture. rhkd's HomeKit snapshots start one past write_seq and were not affected."
-status = "in-pr"
-waiting_on = "Review of gtxaspec/raptor #99."
-then = "Nothing beyond the next raptor bump."
+status = "parked"
+waiting_on = "thingino-firmware bump PR (thingino-raptor to 36d229c, thingino-raptor-hal to f7381ac), being prepared 2026-11-25."
+then = "Remove this item once Thingino pins raptor at or after 36d229c."
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor/pull/99"]
 tested = "2026-11-22, Wyze Cam v4: flip changed while jpeg1 was idle, then saved: stale in 3/3 with the image rvd, current in 5/5 with the fix and after 62 s idle; cold-channel save 20-170 ms. Builds for v3 and v4; host ASan test-all same as main eb748d9."
+notes = "Landed on upstream raptor main 2026-11-24 as 188ce50."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
-branch = "fix-save-jpeg-fresh-frame"
-commits = ["bc68538", "4c74b0b"]
+branch = "main"
+commits = ["188ce50", "bc68538", "4c74b0b"]
 markers = [{ file = "rvd/rvd_ctrl.c", text = "ago: start one past it" }]
 
 [[items]]
@@ -424,18 +425,18 @@ kind = "fix"
 part_of = ["GOAL-v4-firmware"]
 title = "raptor-hal: Gen3 anti-flicker in AUTO mode"
 why = "NORMAL mode pinned exposure to the mains period, so bright scenes couldn't expose correctly on the T41."
-status = "in-pr"
-waiting_on = "Review of raptor-hal #19."
-then = "Bump `THINGINO_RAPTOR_HAL_VERSION`; the v4 can go back to anti-flicker on (50 Hz)."
+status = "parked"
+waiting_on = "thingino-firmware bump PR (thingino-raptor to 36d229c, thingino-raptor-hal to f7381ac), being prepared 2026-11-25."
+then = "Remove this item once Thingino pins raptor-hal at or after f7381ac; the v4 can then go back to anti-flicker on (50 Hz)."
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/19"]
 tested = "2026-11-20, Wyze Cam v4: 60 Hz in morning sun, NORMAL (upstream HAL) pinned at 369 lines, luma 248; AUTO 13 lines, luma 61"
-notes = "Fixes gtxaspec/raptor #85 (white picture after booting into a bright scene; a night/day ISP toggle heals it because the SDK restores day mode with AUTO anti-flicker). Reproduced and explained on #85 on 2026-11-20."
+notes = "Landed on upstream raptor-hal main 2026-11-24 as f7381ac. Fixes gtxaspec/raptor #85 (white picture after booting into a bright scene; a night/day ISP toggle heals it because the SDK restores day mode with AUTO anti-flicker). Reproduced and explained on #85 on 2026-11-20."
 [[items.repos]]
 repo = "raptor-hal"
 binaries = ["rvd"]
-branch = "v4-fixes"
-commits = ["ba5bf46", "26cd15f"]
+branch = "v4-fixes-2"
+commits = ["f7381ac", "ba5bf46", "26cd15f"]
 markers = [{ file = "src/hal_isp.c", text = "IMPISP_ANTIFLICKER_AUTO_MODE" }]
 
 [[items]]
@@ -450,12 +451,12 @@ then = "Bump `THINGINO_RAPTOR_HAL_VERSION` and drop the Wyze Cam v4 gain workaro
 devices = ["wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/20"]
 tested = "2026-11-18, Wyze Cam v4: held day at 91x. 2026-11-22 23:51, Wyze Cam v4: rvd from raptor integration/2026-11-22 + HAL v4-fixes 0d5cccf (this fix cherry-picked onto #16 + #19) under a street light: total_gain 423311 (log2 Q16) became 22455 (87.7x linear), and with ric's default night_gain 80000 it stayed day (luma 49-50); flip held after the restart."
-notes = "A v4 must since 2026-11-22: in our HAL branch v4-fixes (0d5cccf) and the camera's raptor.conf no longer carries the night_gain = 2000000000 workaround, so an rvd without it would force night under any light. The upstream Thingino wyze_cam4 profile workaround still waits for #20 to merge."
+notes = "2026-11-25: our HAL branches are now v4-fixes-2 (upstream main f7381ac + this fix as 31cb743) and v4-fixes-ai-2 (+ ojzdl, onna). A v4 must since 2026-11-22: in our HAL branch v4-fixes (0d5cccf) and the camera's raptor.conf no longer carries the night_gain = 2000000000 workaround, so an rvd without it would force night under any light. The upstream Thingino wyze_cam4 profile workaround still waits for #20 to merge."
 [[items.repos]]
 repo = "raptor-hal"
 binaries = ["rvd"]
 branch = "fix-gen3-total-gain-linear"
-commits = ["a17f2e0", "0d5cccf"]
+commits = ["a17f2e0", "0d5cccf", "31cb743"]
 markers = [{ file = "src/hal_isp.c", text = "total_gain_log2q16_to_linear_q8" }]
 
 [[items]]
@@ -479,28 +480,34 @@ id = "FIX-ringdump-reopen-stale"
 kind = "fix"
 title = "ringdump: reopen a ring its producer replaced"
 why = "ringdump -f spun at full CPU on a replaced ring (endless EOVERFLOW after an incarnation bump, endless EAGAIN on an unlinked ring); two left running starved a camera for hours."
-status = "in-pr"
-waiting_on = "Review of raptor #91."
-then = "Nothing beyond the next thingino-raptor bump."
+status = "parked"
+waiting_on = "thingino-firmware bump PR (thingino-raptor to 36d229c, thingino-raptor-hal to f7381ac), being prepared 2026-11-25."
+then = "Remove this item once Thingino pins raptor at or after 36d229c."
 prs = ["https://github.com/gtxaspec/raptor/pull/91"]
 tested = "2026-11-19, host and Wyze Cam v3"
+notes = "Landed on upstream raptor main 2026-11-24 as d614304; no longer merged into our raptor integration branch (from integration/2026-11-25b)."
 [[items.repos]]
 repo = "raptor"
-branch = "ringdump-reopen-stale"
-commits = ["39ab749"]
+branch = "main"
+commits = ["d614304", "39ab749"]
 
 [[items]]
 id = "FIX-rvd-t41-jpeg-rings"
 kind = "fix"
 title = "rvd: T41 JPEG rings too small for full-size snapshots (jpeg0 never publishes)"
 why = "A 1440p JPEG at quality 75 is ~1.4 MB, larger than the 0.9 MB ring, so every jpeg0 frame is dropped (ENOSPC) and full-size snapshots fail; HomeKit uses jpeg1 at quality 30 meanwhile."
-status = "in-pr"
-waiting_on = "raptor #57 (not ours) merging; we tested it on the v4."
-then = "thingino-raptor bump; full-size snapshots (`jpeg0`) then work on the T41. Then drop the Wyze Cam v4's `jpeg_quality = 30` workaround."
+status = "parked"
+waiting_on = "thingino-firmware bump PR (thingino-raptor to 36d229c, thingino-raptor-hal to f7381ac), being prepared 2026-11-25."
+then = "Remove this item once Thingino pins raptor at or after 36d229c; thingino-raptor bump; full-size snapshots (`jpeg0`) then work on the T41. Then drop the Wyze Cam v4's `jpeg_quality = 30` workaround."
 devices = ["wyze-cam-v4"]
 part_of = ["GOAL-homekit"]
 prs = ["https://github.com/gtxaspec/raptor/pull/57"]
-notes = "Upstream PR #57 (not ours) fixes it; tested on the v4 on 2026-11-19."
+notes = "#57 landed on upstream raptor main 2026-11-24 as e2224b5. Upstream PR #57 (not ours) fixes it; tested on the v4 on 2026-11-19."
+[[items.repos]]
+repo = "raptor"
+binaries = ["rvd"]
+branch = "main"
+commits = ["e2224b5"]
 
 [[items]]
 id = "FIX-uhttpd-gzip-optin"
