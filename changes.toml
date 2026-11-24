@@ -71,6 +71,8 @@ must = [
   "FEAT-rvd-aux-stream",
   "FIX-rhkd-ring-incarnation",
   "FIX-gen3-total-gain-linear",
+  "FEAT-onna",
+  "FEAT-yolo-decode",
 ]
 
 [[devices]]
@@ -80,6 +82,8 @@ soc = "T31X"
 must = [
   "FEAT-rvd-aux-stream",
   "FIX-rhkd-ring-incarnation",
+  "FEAT-ojzdl",
+  "FEAT-yolo-decode",
 ]
 
 # ---------------------------------------------------------------------------------------------------
@@ -262,8 +266,8 @@ waiting_on = "Review and merge of raptor-hal #22 (OJZDL=1 backend) and raptor #1
 then = "Rebase #2221, bump THINGINO_RAPTOR_HAL_VERSION and THINGINO_RAPTOR_VERSION to the merged commits, build a v3 image with the ojzdl engine, mark it ready."
 devices = ["wyze-cam-v3"]
 prs = ["https://github.com/gtxaspec/raptor-hal/pull/22", "https://github.com/gtxaspec/raptor/pull/104", "https://github.com/themactep/thingino-firmware/pull/2221"]
-tested = "2026-11-24, QEMU (XBurstR2): persondet, our person/pet/package model and yolov5 bit-identical to libjzdl on 6 frames each (54/54). 2026-11-24, Wyze Cam v3: all three models bit-identical; persondet forward 84-92 ms vs libjzdl 89-96 ms; hal_jzdl_detect gives the same detections as the libjzdl backend on real NV12 frames (every box and confidence bit), 247 vs 244 ms; live in rvd (IVS_DETECT=1 JZDL_LIBS=, [motion] algorithm = yolo): model loaded, main and sub video at 20 and 15 fps, RSS flat, no errors. Temporary bind mount, reverted."
-notes = "Source of truth: Small6oy/thingino-ai tools/ojzdl (licence MIT, Thingino Project, as raptor-hal's sources); vendored in raptor-hal src/ojzdl. MXU2 kernels on the T31, plain C on other SoCs. Not a must-have: the cameras' images don't enable IVS_DETECT. Findings for upstream's detection path: the stock yolov5 sample scores about 0.06 at most on person frames (likely its transposed 320x416 input), and the libjzdl backend segfaults on non-yolov5 models (ojzdl rejects them)."
+tested = "2026-11-24, QEMU (XBurstR2): persondet, our person/pet/package model and yolov5 bit-identical to libjzdl on 6 frames each (54/54). 2026-11-24, Wyze Cam v3: all three models bit-identical; persondet forward 84-92 ms vs libjzdl 89-96 ms; hal_jzdl_detect gives the same detections as the libjzdl backend on real NV12 frames (every box and confidence bit), 247 vs 244 ms; live in rvd (IVS_DETECT=1 JZDL_LIBS=, [motion] algorithm = yolo): model loaded, main and sub video at 20 and 15 fps, RSS flat, no errors. Temporary bind mount, reverted. 2026-11-25, Wyze Cam v3, flashed image 20261125-0917 (ojzdl + shared YOLO decode FEAT-yolo-decode): thingino-ai-models person/pet/package/vehicle v2 loads (4 classes, 2 heads, 17557 outputs), live labelled detection (vehicle 0.49), rvd 9 % CPU at one inference per second, RSS 11.5 MB."
+notes = "Source of truth: Small6oy/thingino-ai tools/ojzdl (licence MIT, Thingino Project, as raptor-hal's sources); vendored in raptor-hal src/ojzdl. MXU2 kernels on the T31, plain C on other SoCs. A v3 must-have since 2026-11-25: the v3 image runs detection on ojzdl with the person/pet/package/vehicle v2 model (image 20261125-0917, flashed). Findings for upstream's detection path: the stock yolov5 sample scores about 0.06 at most on person frames (likely its transposed 320x416 input), and the libjzdl backend segfaults on non-yolov5 models (ojzdl rejects them)."
 [[items.repos]]
 repo = "raptor-hal"
 branch = "ojzdl-backend"
@@ -291,8 +295,48 @@ part_of = ["GOAL-local-ai"]
 why = "An open replacement for Ingenic's venus on the T41 NNA. It runs the same venus .bin models with the same output bit for bit, as a 142 KB static binary, without venus's 4.5-11.2 MB libraries, its 20 MiB nmem carve-out, the 128K-L2 U-Boot/module change or /dev/soc-nna: the CPU feeds the NN unit directly. It's the path to NNA detection in upstream images without vendor blobs or boot-time memory reservations."
 status = "active"
 devices = ["wyze-cam-v4"]
-tested = "2026-11-24, QEMU 0.7.26 + gtxaspec ingenic-txx 05d871d66a model (host oracle): yolov5n heads byte-identical to venus on two frames, all 60 convs equal the CPU conv. 2026-11-24, Wyze Cam v4, stock (no nmem, 256K L2, daemons running): heads equal to venus's silicon output on both frames; 412 ms min / 433 avg per frame (speed round 3), 15.1 MB peak RSS. Same boot as venus (nmem 20M + 128K L2): onna 913 ms avg, venus 0.1.2-5 78.8 ms, venus 0.3.7-1 79.8 ms (output identical to 0.1.2-5; its first silicon run). 2026-11-24, v4 stock, speed rounds 4-5: 145 ms min / 163 avg, 15.2 MB peak RSS, heads equal to venus on both frames; SiLU requant and heads in MXU3 (vrqtest: 369M silicon cases, 0 mismatches). Round 6: 96-100 ms min / 113 avg, same output (F straight from the tensor; add, concat rescale and maxpool in MXU3, vaddtest every input 0 mismatches). Round 7: 85 ms min / 101 avg (16-channel tensors as 32-byte pixels), same output. Round 8: 78-80 ms min / 94 avg with rhkd and rvd running (F windows, shorter requant, per-pair border path), same output. Round 9, same venus boot, interleaved: onna 82.9-83.0 ms avg / 69.6-69.9 best vs venus 0.3.7-1 81.6-82.0 / 68.5-69.1 and 0.1.2-5 84.7-86.0 / 68.9-70.1: venus's speed, same output, no nmem. 2026-11-24, second model (onnaq, the QSUM kind: NNA requantizes, depthwise, per-channel 1x1, ConvTranspose): the thingino-ai 416x320 detector on the stock v4, heads byte-identical to venus's silicon output (= Ingenic PC executor) on 2 frames, every conv checked against the CPU on silicon; 44.6 ms best / 54 avg (venus 0.1.2-5: 28.7 / 37 with nmem + 128K L2). Speed round 2 the same evening: 23.1 ms best / 33-35 avg on the stock v4, faster than venus, same output (PR #34). QEMU's mismatch on this model = register 0x5b (gtxaspec/qemu#65). 2026-11-25: the v4 resets under sustained NN work were a T41 dual-core deadlock (CPU0 NN + MXU3 loads/stores vs CPU1's ISP firmware MXU3 code in isp_fw_process); fixed by pinning isp_fw_process to CPU0 (nna_pin_isp_cpu0, PR #35): 50,000 frames with video on, no reset, output correct, no speed cost. The integration (init script / raptor-hal backend) must do the same pin. 2026-11-25: raptor-hal backend (ONNA=1, hal_ivs_onna.c, branch onna-backend; pins isp_fw_process in create): host build = independent NumPy decode box for box, v4 silicon = host (network ~32 ms, resize 21 ms); live in rvd on the v4 (detect_interval_ms 500): both streams 25.0 fps with the frame-copy fix (raptor branch ivs-detect-frames on #96); without it the main stream fell to 15 fps (frame held) or 7 fps (frames unread)."
-notes = "Source: Small6oy/thingino-ai tools/onna (C99: nnacpu.c CPU ops, nnabin.c validating .bin + graph loader, nnaeng.c NNA conv driver with its own tiling, be_mxu3.c the NN instructions as .word, oracle/ the host test harness built from QEMU's ingenic-nna.c at build time); notes docs/nna-runtime.md; merged PRs #13, #14, #16 ... #38. Licence: MIT, Copyright Thingino Project, as ojzdl (owner, 2026-11-25; PR #37). In our local images since 2026-11-25 (tools/build-firmware.sh: firmware branch raptor-ivs-onna, raptor integration/2026-11-25, hal v4-fixes-ai). Upstream PRs not opened yet. The NN unit runs with no driver setup; the T41's F RAM is sliced (2-bit slices 0x37/4 lines apart). Remaining time is CPU (requant ~430 ms, F packing ~250 ms per frame); the NN instructions cost nanoseconds. Next: speed round 3 (requant on MXU3, F once per band, no per-instruction calls), then a raptor-hal backend like FEAT-ojzdl. Research notes: nna/open-runtime.md, nna/c-driver-plan.md."
+tested = "2026-11-24, QEMU 0.7.26 + gtxaspec ingenic-txx 05d871d66a model (host oracle): yolov5n heads byte-identical to venus on two frames, all 60 convs equal the CPU conv. 2026-11-24, Wyze Cam v4, stock (no nmem, 256K L2, daemons running): heads equal to venus's silicon output on both frames; 412 ms min / 433 avg per frame (speed round 3), 15.1 MB peak RSS. Same boot as venus (nmem 20M + 128K L2): onna 913 ms avg, venus 0.1.2-5 78.8 ms, venus 0.3.7-1 79.8 ms (output identical to 0.1.2-5; its first silicon run). 2026-11-24, v4 stock, speed rounds 4-5: 145 ms min / 163 avg, 15.2 MB peak RSS, heads equal to venus on both frames; SiLU requant and heads in MXU3 (vrqtest: 369M silicon cases, 0 mismatches). Round 6: 96-100 ms min / 113 avg, same output (F straight from the tensor; add, concat rescale and maxpool in MXU3, vaddtest every input 0 mismatches). Round 7: 85 ms min / 101 avg (16-channel tensors as 32-byte pixels), same output. Round 8: 78-80 ms min / 94 avg with rhkd and rvd running (F windows, shorter requant, per-pair border path), same output. Round 9, same venus boot, interleaved: onna 82.9-83.0 ms avg / 69.6-69.9 best vs venus 0.3.7-1 81.6-82.0 / 68.5-69.1 and 0.1.2-5 84.7-86.0 / 68.9-70.1: venus's speed, same output, no nmem. 2026-11-24, second model (onnaq, the QSUM kind: NNA requantizes, depthwise, per-channel 1x1, ConvTranspose): the thingino-ai 416x320 detector on the stock v4, heads byte-identical to venus's silicon output (= Ingenic PC executor) on 2 frames, every conv checked against the CPU on silicon; 44.6 ms best / 54 avg (venus 0.1.2-5: 28.7 / 37 with nmem + 128K L2). Speed round 2 the same evening: 23.1 ms best / 33-35 avg on the stock v4, faster than venus, same output (PR #34). QEMU's mismatch on this model = register 0x5b (gtxaspec/qemu#65). 2026-11-25: the v4 resets under sustained NN work were a T41 dual-core deadlock (CPU0 NN + MXU3 loads/stores vs CPU1's ISP firmware MXU3 code in isp_fw_process); fixed by pinning isp_fw_process to CPU0 (nna_pin_isp_cpu0, PR #35): 50,000 frames with video on, no reset, output correct, no speed cost. The integration (init script / raptor-hal backend) must do the same pin. 2026-11-25: raptor-hal backend (ONNA=1, hal_ivs_onna.c, branch onna-backend; pins isp_fw_process in create): host build = independent NumPy decode box for box, v4 silicon = host (network ~32 ms, resize 21 ms); live in rvd on the v4 (detect_interval_ms 500): both streams 25.0 fps with the frame-copy fix (raptor branch ivs-detect-frames on #96); without it the main stream fell to 15 fps (frame held) or 7 fps (frames unread). 2026-11-25, v2 model (person/pet/package/vehicle, re-exported with the chain clamp because onna has no Add yet): heads byte-identical venus = onna = golden model on the v4; venus 34.5 ms avg / 23.1 best, onna 40.7 / 25.1. Same day, venus 30-minute soak on the v4 (nmem boot, isp_fw_process unpinned): 49,000 inferences, no reset, both streams 25 fps, so the dual-core deadlock is specific to CPU-side MXU3 work like onna's. 2026-11-25 10:37, Wyze Cam v4, flashed image 20261125-0924 (onna, hal v4-fixes-ai-3, raptor integration/2026-11-25c): v2 live in rvd at 500 ms, network 32 ms + resize 22 ms, rvd RSS 14.3 MB, both streams 25.0 fps with no gaps, labelled detections (vehicle 0.46), per-class thresholds from the config."
+notes = "Source: Small6oy/thingino-ai tools/onna (C99: nnacpu.c CPU ops, nnabin.c validating .bin + graph loader, nnaeng.c NNA conv driver with its own tiling, be_mxu3.c the NN instructions as .word, oracle/ the host test harness built from QEMU's ingenic-nna.c at build time); notes docs/nna-runtime.md; merged PRs #13, #14, #16 ... #38. Licence: MIT, Copyright Thingino Project, as ojzdl (owner, 2026-11-25; PR #37). On the v4 since 2026-11-25 (image 20261125-0924: firmware branch raptor-ivs-onna, raptor integration/2026-11-25c, hal v4-fixes-ai-3; the backend also honours class_threshold and config anchors). Open: Add support (the library's v2 T41 file uses an Add clamp, int8 AP50 better than the chain re-export: pet .637 vs .540). Upstream PRs not opened yet. The NN unit runs with no driver setup; the T41's F RAM is sliced (2-bit slices 0x37/4 lines apart). Remaining time is CPU (requant ~430 ms, F packing ~250 ms per frame); the NN instructions cost nanoseconds. Next: speed round 3 (requant on MXU3, F once per band, no per-instruction calls), then a raptor-hal backend like FEAT-ojzdl. Research notes: nna/open-runtime.md, nna/c-driver-plan.md."
+
+[[items.repos]]
+repo = "raptor-hal"
+branch = "onna-backend"
+commits = ["f2cac9f", "5fe2a64"]
+markers = [
+  { file = "src/hal_ivs_onna.c", text = "hal_jzdl_create" },
+]
+binaries = ["rvd"]
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "raptor-ivs-onna"
+commits = ["c2e67806b"]
+
+[[items]]
+id = "FEAT-yolo-decode"
+kind = "feature"
+title = "Shared YOLO decode for the hal_jzdl_* detectors, with per-class thresholds, anchors and class names"
+part_of = ["GOAL-local-ai"]
+why = "raptor-hal's JZDL backends decoded with a copy of the magik sample's loop: three heads at strides 8/16/32 and COCO anchors. Persondet-derived models (2 heads, strides 32 and 16, their own anchors), such as our person/pet/package models, were read out of bounds. The shared decode reads the head layout from the model's output trailer, and rvd gains [motion] class_thresholds, anchors_8/16/32 and class_names (a label per detection in ivs-detections)."
+status = "local"
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+tested = "2026-11-24, host build vs a Python reference decode on libjzdl outputs of a 2-head persondet-derived model (8 frames) and the magik yolov5 sample (4 frames): same boxes, classes and scores, 12/12. 2026-11-24, Wyze Cam v3 live in rvd: person detected on a walk-past at 0.45-0.50, +7.7 % CPU. 2026-11-25, flashed on both cameras (v3 image 20261125-0917, v4 image 20261125-0924): labelled detections from the v2 model on both."
+notes = "raptor-hal: hal_ivs_yolo.c used by the ojzdl and libjzdl backends (onna decodes on its own and reads the same class_threshold and anchors fields). raptor: rvd-detect, on top of #96 (its own interval sleep dropped: #96 releases the frames between inferences). Upstream PRs not opened yet; the raptor-hal side sits on #22."
+[[items.repos]]
+repo = "raptor-hal"
+branch = "yolo-decode"
+commits = ["6b2b28a", "dafaed9"]
+markers = [
+  { file = "src/hal_ivs_yolo.c", text = "hal_yolo_run" },
+]
+binaries = ["rvd"]
+[[items.repos]]
+repo = "raptor"
+branch = "rvd-detect"
+commits = ["968f388", "e3b1628"]
+markers = [
+  { file = "rvd/rvd_ivs.c", text = "\"class_thresholds\"" },
+]
+binaries = ["rvd"]
 
 [[items]]
 id = "FEAT-ric-history"
