@@ -108,7 +108,7 @@ title = "On-camera AI object detection"
 why = "Cameras detect person, pet and package (video) and sound events (baby crying, dog barking, alarm) locally and turn each into HomeKit events, OSD boxes and MQTT, with a web UI to switch classes on or off. No cloud. Person detection has a commercial precedent on the same silicon (the Aqara G100, a T31, runs a person-only detector on-camera); pet, package and sound are ours to prove. We benchmark against it."
 status = "active"
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-notes = "Planning stage. v3 (T31) runs JZDL on the CPU with our own converted multi-class model; v4 (T41) runs venus on the NNA. Same ivs-status -> rmd -> rhkd/OSD/webui pipeline above either backend. Design rules from the G100: a per-object tracking gate before any report, and detect/notify/record as three independent per-class decisions. Sound detection (an audio classifier on the mic path) is a parallel track. All work lives in a dedicated repo, thingino-ai (a private repo plus a public mirror); the thingino integration code stays on the upstream forks and is mirrored there. Task breakdown and gates: research ai/tasks.md; benchmark method: ai/benchmark.md. v3 first."
+notes = "Planning stage. v3 (T31) runs JZDL on the CPU with our own converted multi-class model; v4 (T41) runs on the NNA: venus 0.3.7-1 (in ingenic-lib, verified on the v4 2026-11-24, needs nmem + a 128K L2) or our own runtime FEAT-onna (no nmem, no vendor libraries; not yet as fast). Same ivs-status -> rmd -> rhkd/OSD/webui pipeline above either backend. Design rules from the G100: a per-object tracking gate before any report, and detect/notify/record as three independent per-class decisions. Sound detection (an audio classifier on the mic path) is a parallel track. All work lives in a dedicated repo, thingino-ai (a private repo plus a public mirror); the thingino integration code stays on the upstream forks and is mirrored there. Task breakdown and gates: research ai/tasks.md; benchmark method: ai/benchmark.md. v3 first."
 
 [[items]]
 id = "GOAL-v4-firmware"
@@ -282,6 +282,17 @@ markers = [
 repo = "thingino-firmware"
 branch = "raptor-ivs-ojzdl"
 commits = ["a8481dc26"]
+
+[[items]]
+id = "FEAT-onna"
+kind = "feature"
+title = "onna: open runtime for the T41 NNA (venus-compatible, no nmem, no soc-nna)"
+part_of = ["GOAL-local-ai"]
+why = "An open replacement for Ingenic's venus on the T41 NNA. It runs the same venus .bin models with the same output bit for bit, as a 142 KB static binary, without venus's 4.5-11.2 MB libraries, its 20 MiB nmem carve-out, the 128K-L2 U-Boot/module change or /dev/soc-nna: the CPU feeds the NN unit directly. It's the path to NNA detection in upstream images without vendor blobs or boot-time memory reservations."
+status = "active"
+devices = ["wyze-cam-v4"]
+tested = "2026-11-24, QEMU 0.7.26 + gtxaspec ingenic-txx 05d871d66a model (host oracle): yolov5n heads byte-identical to venus on two frames, all 60 convs equal the CPU conv. 2026-11-24, Wyze Cam v4, stock (no nmem, 256K L2, daemons running): heads equal to venus's silicon output on both frames; 825 ms min / 849 avg per frame (speed round 2), 16-18 MB peak RSS. Same boot as venus (nmem 20M + 128K L2): onna 913 ms avg, venus 0.1.2-5 78.8 ms, venus 0.3.7-1 79.8 ms (output identical to 0.1.2-5; its first silicon run)."
+notes = "Source: Small6oy/thingino-ai tools/onna (C99: nnacpu.c CPU ops, nnabin.c validating .bin + graph loader, nnaeng.c NNA conv driver with its own tiling, be_mxu3.c the NN instructions as .word, oracle/ the host test harness built from QEMU's ingenic-nna.c at build time); notes docs/nna-runtime.md; merged PRs #13, #14, #16. Licence not chosen yet (ojzdl: MIT, Thingino Project). The NN unit runs with no driver setup; the T41's F RAM is sliced (2-bit slices 0x37/4 lines apart). Remaining time is CPU (requant ~430 ms, F packing ~250 ms per frame); the NN instructions cost nanoseconds. Next: speed round 3 (requant on MXU3, F once per band, no per-instruction calls), then a raptor-hal backend like FEAT-ojzdl. Research notes: nna/open-runtime.md, nna/c-driver-plan.md."
 
 [[items]]
 id = "FEAT-ric-history"
@@ -557,13 +568,23 @@ tested = "2026-11-23, emulator only (thingino T31X GC2053 image, 1080p+360p H.26
 notes = "Issue: https://github.com/gtxaspec/qemu/issues/37. Pure model change, tested on the emulator. Commits and PR text carry no AI mention (checkpatch). No claim comment on the issue (user, 2026-11-22). PR #52 is Part of #37 (item 1, the thread); item 2 (silicon-time on in the timing tests, frames counted in guest time) stays with the owner's harness. Review 2026-11-22 (gtxaspec): merge after small changes; done and force-pushed 2026-11-23. Small6oy/qemu avpu-due-thread (6c9f05fa90, on ingenic-txx 26129bea50), 4 commits: resume only vCPUs a hold paused + NULL timer_del guard (own commit, upstream silicon-time aborts in mips_cpu_do_interrupt in half our runs); due thread + unrealize (oneshot BH + join) + 3 TCG qtests; ingenic_avpu_done gets the completion's guest time; README paragraph. Frames per second still follow host load (his SDK demo runs and ours). Work tree ~/qemu-avpu37 on .5 (container qemu37-build, harness run/ab.sh + run/an2.py). Body: upstream/qemu/pr52-avpu-due-body.md, reply: upstream/qemu/pr52-reply-review.md."
 
 [[items]]
+id = "ISSUE-qemu-t41-f-noprogram"
+kind = "issue"
+title = "qemu: T41 NNA F writes with no WFCW program (0x5a = 0) differ from silicon (gtxaspec/qemu #63)"
+why = "ingenic-nna treats 0x5a = 0 as one F line per 4-pixel slot (the same as the one-word program 0x801); a T41NQ writes F elsewhere. Code that relies on the default passes in the emulator and gives wrong sums on hardware."
+status = "unfixed"
+devices = ["wyze-cam-v4"]
+tested = "2026-11-24, Wyze Cam v4 vs ingenic-txx 05d871d66a, fprobe (identity weights, address-coded F): with the program both agree, without it they differ; NNCMD 0x60 is a no-op on both"
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/63 (no patch: silicon's rule for 0x5a = 0 is unknown). onna always programs WFCW, so it is not affected. Same session confirmed upstream's ae58bace25 (T41 F RAM slices) against silicon address for address. Body: upstream/qemu/issue-t41-f-noprogram-body.md."
+
+[[items]]
 id = "ISSUE-qemu-tcu-silicon"
 kind = "issue"
 title = "qemu: TCU prescaler divisors, TCSR bit 23 and TSR reset measured on a T31X and a T41NQ (gtxaspec/qemu #47)"
 why = "The TCU model's prescaler divisors (/1 to /1024) are unconfirmed on every part, the T41's TCSR bit 23 is writable but its effect over a full count is unmeasured, and TSR's reset value has to be read before the kernel touches it. Our Wyze Cam v3 (T31X) and v4 (T41NQ) can measure them."
 status = "in-pr"
 prs = ["https://github.com/gtxaspec/qemu/pull/50"]
-waiting_on = "The maintainer's re-review of #50: rebased onto ingenic-txx 26129bea50 with all three review changes as 25ea1598e8, pushed and replied 2026-11-23."
+waiting_on = "The maintainer's merge of #50 into ingenic-txx (after his combined regression gate and CI), released in ingenic-0.7.30. Re-review 2026-11-23 06:26 UTC: MERGE (https://github.com/gtxaspec/qemu/pull/50#issuecomment-7093337867)."
 then = "Address anything the re-review raises; after the merge, set status merged. The bench items he left open (not blocking) stay open; we can only measure a T31X and a T41NQ."
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 tested = "2026-11-22, Wyze Cam v3 (T31X) and v4 (T41NQ), TCU ch2 and ch3 via emu/tools/tcu47/tcuprobe.c; registers restored, no reboot"
