@@ -575,7 +575,7 @@ why = "ingenic-nna treats 0x5a = 0 as one F line per 4-pixel slot (the same as t
 status = "unfixed"
 devices = ["wyze-cam-v4"]
 tested = "2026-11-24, Wyze Cam v4 vs ingenic-txx 05d871d66a, fprobe (identity weights, address-coded F): with the program both agree, without it they differ; NNCMD 0x60 is a no-op on both"
-notes = "Issue: https://github.com/gtxaspec/qemu/issues/63 (no patch: silicon's rule for 0x5a = 0 is unknown). 2026-11-25 sweep (comment 7134683958): silicon placement depends on hidden state from earlier writes, one NNDWR with no program hangs the NN unit; proposed LOG_GUEST_ERROR instead of a rule. onna always programs WFCW, so it is not affected. Same session confirmed upstream's ae58bace25 (T41 F RAM slices) against silicon address for address. Body: upstream/qemu/issue-t41-f-noprogram-body.md."
+notes = "Issue: https://github.com/gtxaspec/qemu/issues/63 (no patch: silicon's rule for 0x5a = 0 is unknown). 2026-11-25 sweep (comment 7134683958): silicon placement depends on hidden state from earlier writes, one NNDWR with no program hangs the NN unit; proposed LOG_GUEST_ERROR instead of a rule. PR https://github.com/gtxaspec/qemu/pull/67 (branch t41-nna-noprogram, a266970456; qtest 21/21, oracle output unchanged). onna always programs WFCW, so it is not affected. Same session confirmed upstream's ae58bace25 (T41 F RAM slices) against silicon address for address. Body: upstream/qemu/issue-t41-f-noprogram-body.md."
 
 [[items]]
 id = "ISSUE-qemu-tcu-silicon"
