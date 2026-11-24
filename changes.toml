@@ -26,7 +26,7 @@
 [meta]
 title = "Thingino changes"
 owner = "Small6oy"
-updated = "2026-11-23"
+updated = "2026-11-24"
 intro = "Fixes, features and goals we carry on top of upstream Thingino, raptor, raptor-hal and the HomeKit daemon, what each camera's builds must contain, and where each change stands upstream."
 
 # ---------------------------------------------------------------------------------------------------
@@ -250,6 +250,38 @@ commits = ["783fd4f"]
 repo = "thingino-firmware"
 branch = "faac-3.0"
 commits = ["5a7580e70", "6fb99a4c2"]
+
+[[items]]
+id = "FEAT-ojzdl"
+kind = "feature"
+title = "ojzdl: open JZDL runtime in raptor-hal (no libjzdl, no libstdc++)"
+part_of = ["GOAL-local-ai"]
+why = "An open replacement for Ingenic's libjzdl.m.so, built into raptor-hal: the same JZDL models (the magik yolov5 and persondet samples, our own models) give the same detections bit for bit at the same speed on the T31, without libjzdl.m.so (609 KB) or libstdc++ (2.2 MB); rvd grows about 33 KB. Converter, models and runtime are then all open, and we can add operations libjzdl lacks."
+status = "in-pr"
+waiting_on = "Review and merge of raptor-hal #22 (OJZDL=1 backend) and raptor #104 (JZDL_LIBS). thingino-firmware #2221 (engine choice in menuconfig) is a draft until both are in."
+then = "Rebase #2221, bump THINGINO_RAPTOR_HAL_VERSION and THINGINO_RAPTOR_VERSION to the merged commits, build a v3 image with the ojzdl engine, mark it ready."
+devices = ["wyze-cam-v3"]
+prs = ["https://github.com/gtxaspec/raptor-hal/pull/22", "https://github.com/gtxaspec/raptor/pull/104", "https://github.com/themactep/thingino-firmware/pull/2221"]
+tested = "2026-11-24, QEMU (XBurstR2): persondet, our person/pet/package model and yolov5 bit-identical to libjzdl on 6 frames each (54/54). 2026-11-24, Wyze Cam v3: all three models bit-identical; persondet forward 84-92 ms vs libjzdl 89-96 ms; hal_jzdl_detect gives the same detections as the libjzdl backend on real NV12 frames (every box and confidence bit), 247 vs 244 ms; live in rvd (IVS_DETECT=1 JZDL_LIBS=, [motion] algorithm = yolo): model loaded, main and sub video at 20 and 15 fps, RSS flat, no errors. Temporary bind mount, reverted."
+notes = "Source of truth: Small6oy/thingino-ai tools/ojzdl (licence MIT, Thingino Project, as raptor-hal's sources); vendored in raptor-hal src/ojzdl. MXU2 kernels on the T31, plain C on other SoCs. Not a must-have: the cameras' images don't enable IVS_DETECT. Findings for upstream's detection path: the stock yolov5 sample scores about 0.06 at most on person frames (likely its transposed 320x416 input), and the libjzdl backend segfaults on non-yolov5 models (ojzdl rejects them)."
+[[items.repos]]
+repo = "raptor-hal"
+branch = "ojzdl-backend"
+commits = ["e38a020", "51f29e8"]
+markers = [
+  { file = "src/hal_ivs_ojzdl.c", text = "hal_jzdl_create" },
+]
+[[items.repos]]
+repo = "raptor"
+branch = "ivs-jzdl-libs"
+commits = ["80e0605"]
+markers = [
+  { file = "Makefile", text = "JZDL_LIBS ?=" },
+]
+[[items.repos]]
+repo = "thingino-firmware"
+branch = "raptor-ivs-ojzdl"
+commits = ["a8481dc26"]
 
 [[items]]
 id = "FEAT-ric-history"
