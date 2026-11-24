@@ -568,23 +568,6 @@ tested = "2026-11-23, emulator only (thingino T31X GC2053 image, 1080p+360p H.26
 notes = "Issue: https://github.com/gtxaspec/qemu/issues/37. Pure model change, tested on the emulator. Commits and PR text carry no AI mention (checkpatch). No claim comment on the issue (user, 2026-11-22). PR #52 is Part of #37 (item 1, the thread); item 2 (silicon-time on in the timing tests, frames counted in guest time) stays with the owner's harness. Review 2026-11-22 (gtxaspec): merge after small changes; done and force-pushed 2026-11-23. Small6oy/qemu avpu-due-thread (6c9f05fa90, on ingenic-txx 26129bea50), 4 commits: resume only vCPUs a hold paused + NULL timer_del guard (own commit, upstream silicon-time aborts in mips_cpu_do_interrupt in half our runs); due thread + unrealize (oneshot BH + join) + 3 TCG qtests; ingenic_avpu_done gets the completion's guest time; README paragraph. Frames per second still follow host load (his SDK demo runs and ours). Work tree ~/qemu-avpu37 on .5 (container qemu37-build, harness run/ab.sh + run/an2.py). Body: upstream/qemu/pr52-avpu-due-body.md, reply: upstream/qemu/pr52-reply-review.md."
 
 [[items]]
-id = "FIX-qemu-t41-nna-wram"
-kind = "fix"
-title = "qemu: a T41NQ's NNA W RAM holds 288 entries, not 1024 (gtxaspec/qemu #64)"
-why = "ingenic-nna gave the T41 1024 W entries; a T41NQ keeps 288 (72 KiB) and wraps the write pointer to entry 0. NNA code that keeps more than 288 entries loaded passes in the emulator and reads the wrong weights on silicon (FEAT-onna hit it)."
-status = "in-pr"
-prs = ["https://github.com/gtxaspec/qemu/pull/64"]
-waiting_on = "The maintainer's review of #64."
-then = "Address the review; after the merge, drop this item."
-devices = ["wyze-cam-v4"]
-tested = "2026-11-24, Wyze Cam v4: wprobe, 72 groups (288 entries) in order, 73/108 groups -> entry 0 reads group 72, 256 groups -> group 216. Patched model: the same table; ingenic-nna-test 21/21 (new engine/w-wrap fails on the old model); venus 0.1.2-5 trace 661,920/661,920 read-backs unchanged; checkpatch clean"
-notes = "NN_WRAM_T41 256 KiB -> 72 KiB (nn_wcap's modulo then wraps at 288), qtest engine/w-wrap, program record limit 512 -> 1280. Body: upstream/qemu/pr-t41-nna-wram-body.md."
-[[items.repos]]
-repo = "qemu"
-branch = "t41-nna-wram"
-commits = ["430fa84bad"]
-
-[[items]]
 id = "ISSUE-qemu-t41-f-noprogram"
 kind = "issue"
 title = "qemu: T41 NNA F writes with no WFCW program (0x5a = 0) differ from silicon (gtxaspec/qemu #63)"
