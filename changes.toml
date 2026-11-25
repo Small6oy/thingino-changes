@@ -71,6 +71,7 @@ must = [
   "FIX-gen3-total-gain-linear",
   "FEAT-onna",
   "FEAT-yolo-decode",
+  "FEAT-rvd-detect-classes",
 ]
 
 [[devices]]
@@ -82,6 +83,7 @@ must = [
   "FIX-rhkd-ring-incarnation",
   "FEAT-ojzdl",
   "FEAT-yolo-decode",
+  "FEAT-rvd-detect-classes",
 ]
 
 # ---------------------------------------------------------------------------------------------------
@@ -550,7 +552,8 @@ notes = "Branch rvd-detect-classes on integration/2026-11-25c; in the images fla
 [[items.repos]]
 repo = "raptor"
 branch = "rvd-detect-classes"
-commits = ["52766f9", "d44e8be", "e8162af", "cbddbda", "0147e22", "3dec2d5", "00c5a52"]
+commits = ["52766f9", "d44e8be", "e8162af", "cbddbda", "0147e22", "3dec2d5", "00c5a52", "c565ac0", "3434e44", "573e901", "ecce5a7", "8192e3a"]
+markers = [{ file = "rvd/rvd.h", text = "ivs_class_mask" }, { file = "rmd/rmd.h", text = "record_classes" }, { file = "rvd/rvd_ivs_track.h", text = "dormant" }]
 binaries = ["rvd", "rmd"]
 
 [[items]]
