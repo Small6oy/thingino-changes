@@ -138,7 +138,7 @@ title = "Object detection on the T41 NNA"
 why = "Run small detection models (yolov5n) on the T41's neural accelerator."
 status = "active"
 devices = ["wyze-cam-v4"]
-notes = "Works on the v4 (~80 ms per frame on CPU0). The maintainer's U-Boot fix landed in thingino-firmware master on 2026-11-25 (3d25f90ba: the SPL sets the L2 to 128 KiB on T40 and T41, so the ORAM sits where soc-nna maps it; our draft #2232 closed as superseded). Our images from 2026-11-25 are built on a master that has it; reading MSCR on the v4 (0x02000430 expected) is still to do. Detection itself no longer needs it: our own runtime FEAT-onna drives the NNA without nmem, soc-nna or the L2 change."
+notes = "Works on the v4 (~80 ms per frame on CPU0). The maintainer's U-Boot fix landed in thingino-firmware master on 2026-11-25 (3d25f90ba: the SPL sets the L2 to 128 KiB on T40 and T41, so the ORAM sits where soc-nna maps it; our draft #2232 closed as superseded). Our images from 2026-11-25 are built on a master that has it; reading MSCR on the v4 (0x02000430 expected) is still to do. Detection itself no longer needs it: our own runtime FEAT-onna drives the NNA without nmem, soc-nna or the L2 change. 2026-11-26: the Wyze Cam v4 on a stock image built on that master reads MSCR 0x02000430, so the 128 KiB L2 is live on silicon."
 
 [[items]]
 id = "GOAL-ric-sensor-data"
