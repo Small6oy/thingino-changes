@@ -586,3 +586,21 @@ notes = "ai-4 (24fcd54): ai-3 + onna-backend 9f27073 (graph from the .bin, ancho
 repo = "raptor-hal"
 branch = "v4-fixes-ai-7"
 commits = ["24fcd54", "c022081", "6cc9dac", "4585a43", "fdf2d33"]
+
+[[items]]
+id = "FIX-rvd-save-raw-ivs"
+kind = "fix"
+title = "rvd: save raw on the JZDL channel takes its frame from the JZDL thread"
+why = "With detection on, `raptorctl rvd save raw <file> 1` crashed rvd (SIGSEGV in libimp list_del_FSDepth / list_add): save raw's transient SetFrameDepth(1)/GetFrame/SetFrameDepth(0) raced the JZDL thread's depth-1 GetFrame loop on the same framesource channel and tore its queue down."
+status = "pr"
+part_of = ["GOAL-local-ai"]
+devices = ["wyze-cam-v3", "wyze-cam-v4"]
+prs = ["https://github.com/gtxaspec/raptor/pull/108"]
+tested = "2026-11-26 13:44, Wyze Cam v4 (rvd 8a20824b = integration/2026-11-26 61dfad1 + fix): 20x save raw 1 + save jpeg 1 and 5x save raw 0, all ok, same rvd pid, no SIGSEGV; channel-1 NV12 a clean frame. Before: 6 rvd deaths in ~30 rounds."
+notes = "Both halves are upstream raptor code (JZDL thread b003aa4/475e618, save raw 9f933f0); it hits anyone with IVS_DETECT + JZDL who saves raw on the sub stream. Carried in integration/2026-11-26 5422458 (research-12)."
+[[items.repos]]
+repo = "raptor"
+binaries = ["rvd"]
+branch = "rvd-save-raw-ivs"
+commits = ["1a8fa25"]
+markers = [{ file = "rvd/rvd_ivs.c", text = "rvd_ivs_grab_raw" }]
