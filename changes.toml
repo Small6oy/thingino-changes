@@ -112,7 +112,7 @@ title = "On-camera AI object detection"
 why = "Cameras detect person, pet and package (video) and sound events (baby crying, dog barking, alarm) locally and turn each into HomeKit events, OSD boxes and MQTT, with a web UI to switch classes on or off. No cloud. Person detection has a commercial precedent on the same silicon (the Aqara G100, a T31, runs a person-only detector on-camera); pet, package and sound are ours to prove. We benchmark against it."
 status = "active"
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
-notes = "Running on both cameras since the 2026-11-25 images: the v3 (T31) on our open JZDL runtime FEAT-ojzdl (CPU, MXU2), the v4 (T41) on our open NNA runtime FEAT-onna (no nmem, no vendor libraries, venus speed). Default model since 2026-11-25: our open YOLOX-Nano 4-class v1 (Apache-2.0, person/pet/package/vehicle), public in the thingino-ai releases. Per-class Detect, tracking gate and Notify/Record (FEAT-rvd-detect-classes), one HomeKit sensor per class (FEAT-rhkd-class-sensors, not in an image yet) and the web UI overlay and settings page (FEAT-webui-detect-overlay) sit on top. Fallback on the T41: venus 0.3.7-1 (in ingenic-lib, needs nmem; the 128K L2 is upstream since 2026-11-25). Same ivs-status -> rmd -> rhkd/OSD/webui pipeline above either backend. Design rules from the G100: a per-object tracking gate before any report, and detect/notify/record as three independent per-class decisions. Sound detection (an audio classifier on the mic path) is a parallel track. All work lives in a dedicated repo, thingino-ai (a private repo plus a public mirror); the thingino integration code stays on the upstream forks and is mirrored there. Task breakdown and gates: research ai/tasks.md; benchmark method: ai/benchmark.md. v3 first."
+notes = "Running on both cameras since the 2026-11-25 images: the v3 (T31) on our open JZDL runtime FEAT-ojzdl (CPU, MXU2), the v4 (T41) on our open NNA runtime FEAT-onna (no nmem, no vendor libraries, venus speed). Default model since 2026-11-25: our open YOLOX-Nano 4-class v1 (Apache-2.0, person/pet/package/vehicle), public in the thingino-ai releases. Per-class Detect, tracking gate and Notify/Record (FEAT-rvd-detect-classes), one HomeKit sensor per class (rhkd 0.10.1, upstream since thingino-firmware #2247, merged 2026-11-26 as 48860cfc4) and the web UI overlay and settings page (FEAT-webui-detect-overlay) sit on top. Fallback on the T41: venus 0.3.7-1 (in ingenic-lib, needs nmem; the 128K L2 is upstream since 2026-11-25). Same ivs-status -> rmd -> rhkd/OSD/webui pipeline above either backend. Design rules from the G100: a per-object tracking gate before any report, and detect/notify/record as three independent per-class decisions. Sound detection (an audio classifier on the mic path) is a parallel track. All work lives in a dedicated repo, thingino-ai (a private repo plus a public mirror); the thingino integration code stays on the upstream forks and is mirrored there. Task breakdown and gates: research ai/tasks.md; benchmark method: ai/benchmark.md. v3 first."
 
 [[items]]
 id = "GOAL-v4-firmware"
@@ -557,23 +557,6 @@ markers = [{ file = "rvd/rvd.h", text = "ivs_class_mask" }, { file = "rmd/rmd.h"
 binaries = ["rvd", "rmd"]
 
 [[items]]
-id = "FEAT-rhkd-class-sensors"
-kind = "feature"
-title = "rhkd: one HomeKit motion sensor per detection class; HKSV follows record_classes"
-why = "Owner (2026-11-25): one sensor per class. With a yolo model rhkd adds a Motion Sensor per detected class (Person, Pet, Package, Vehicle; names from [motion] class_names, renamable in Home), each on while an object of that class is new or moving (rvd class_mask, same debounce as the main sensor). The existing Motion sensor stays the one HKSV is linked to and now counts only [motion] record_classes (unset = every class, none = never). Without yolo nothing changes."
-status = "in-pr"
-part_of = ["GOAL-local-ai", "GOAL-homekit"]
-devices = ["wyze-cam-v3", "wyze-cam-v4"]
-tested = "2026-11-25: builds clean for xburst1 (849,376 B) and xburst2 (860,076 B, static docker build); classes.c host test with ASan+UBSan. 2026-11-25 13:26 on the v4 (owner OK): bind-mounted /tmp/xb/rhkd (md5 ef8fbb8c, docker static build) over the image rhkd 0.9.10, restarted by S98rhkd supervise; logged \"4 class sensor(s): Person, Pet, Package, Vehicle\", DB revision 12.7cc1 bumped the CN, the Home hub read the new sensors (0x401..0x431) within 2 s; quiet scene: no class fired, no errors, VmRSS 2.9 MB. A real walk-past not yet seen. Undo: umount /usr/bin/rhkd + killall rhkd (supervisor restarts the image rhkd), or reboot. 2026-11-26 15:07, Wyze Cam v4: a walk past turned the Person sensor on for 14 s, then off; stats on both cameras (rhkd 0.1 % CPU, 2.7-2.9 MB RSS). 2026-11-26 16:46, v4: the 0.10.1 code with class_names removed from raptor.conf built the same four sensors from the model's own conf."
-notes = "Needs raptor rvd-detect-classes (class_mask). Up to 8 class sensors, kAttributeCount 65 -> 105; DB revision = 12 << 16 | class-set fingerprint, so a classes change in raptor.conf bumps the CN. Branch class-sensors in the homekit repo (share checkout stays on main). Next: v4 test (owner OK), PR resource stats (tools/rhkd-stats.sh), then public thingino-homekit release + version-bump PR. Released 2026-11-26 as public v0.10.0 (class sensors) and v0.10.1 (class names from the model's own conf when raptor.conf sets none, as rvd reads it); both cameras run 0.10.0 from their 2026-11-26 images. Upstream through thingino-firmware #2247 (thingino-rhkd bump to v0.10.1). The sensors stay off upstream until raptor reports class_mask (FEAT-rvd-detect-classes)."
-prs = ["https://github.com/themactep/thingino-firmware/pull/2247"]
-[[items.repos]]
-repo = "thingino-homekit"
-branch = "main"
-commits = ["f13357f", "827a1e4", "6a248b6"]
-binaries = ["rhkd"]
-
-[[items]]
 id = "FEAT-hal-v4-fixes-ai"
 kind = "feature"
 title = "raptor-hal v4-fixes-ai-N: the HAL branch the cameras' detection builds use (now v4-fixes-ai-7)"
@@ -598,10 +581,10 @@ part_of = ["GOAL-local-ai"]
 devices = ["wyze-cam-v3", "wyze-cam-v4"]
 prs = ["https://github.com/gtxaspec/raptor/pull/108"]
 tested = "2026-11-26 13:44, Wyze Cam v4 (rvd 8a20824b = integration/2026-11-26 61dfad1 + fix): 20x save raw 1 + save jpeg 1 and 5x save raw 0, all ok, same rvd pid, no SIGSEGV; channel-1 NV12 a clean frame. Before: 6 rvd deaths in ~30 rounds."
-notes = "Both halves are upstream raptor code (JZDL thread b003aa4/475e618, save raw 9f933f0); it hits anyone with IVS_DETECT + JZDL who saves raw on the sub stream. Carried in integration/2026-11-26 5422458 (research-12)."
+notes = "Both halves are upstream raptor code (JZDL thread b003aa4/475e618, save raw 9f933f0); it hits anyone with IVS_DETECT + JZDL who saves raw on the sub stream. Carried in integration/2026-11-26 5422458 (research-12). 2026-11-28 (pipeline sync): 500fa38 stubs rvd_ivs_owns_fs/rvd_ivs_grab_raw in tests/test_ctrl.c, so the unit tests link again (they failed since the merge); carried in integration/2026-11-28 (4a2bbeb). Not yet pushed to the PR branch on GitHub."
 [[items.repos]]
 repo = "raptor"
 binaries = ["rvd"]
 branch = "rvd-save-raw-ivs"
-commits = ["1a8fa25"]
+commits = ["1a8fa25", "500fa38"]
 markers = [{ file = "rvd/rvd_ivs.c", text = "rvd_ivs_grab_raw" }]
